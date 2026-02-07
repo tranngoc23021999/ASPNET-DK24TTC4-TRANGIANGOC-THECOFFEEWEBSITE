@@ -1,4 +1,4 @@
-# THE COFFEE WEBSITE
+# THE COFFEE WEBSITE ☕
 
 ## THÔNG TIN CÁ NHÂN
 - **Họ và tên**: TRẦN GIA NGỌC
