@@ -1,0 +1,6 @@
+scr/CoffeSolution/CoffeSolution/obj
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
