@@ -1,4 +1,5 @@
 using CoffeSolution.Attributes;
+using CoffeSolution.Constants;
 using CoffeSolution.Data;
 using CoffeSolution.Models.Entities;
 using CoffeSolution.Services;
@@ -9,10 +10,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeSolution.Controllers;
 
+/// <summary>
+/// Controller quản lý Users với RBAC hierarchy:
+/// - Administrator: Quản lý tất cả users
+/// - Admin: Quản lý Leader, Staff trong stores của mình
+/// </summary>
 public class UserController : BaseController
 {
     private readonly ApplicationDbContext _context;
-    private const string MenuCode = "USER";
 
     public UserController(
         ApplicationDbContext context,
@@ -23,238 +28,423 @@ public class UserController : BaseController
         _context = context;
     }
 
-    [Permission("USER", "VIEW")]
-    public async Task<IActionResult> Index(string? search, int? roleId)
-    {
-        await SetPermissionViewBagAsync(MenuCode);
+    #region Index - Danh sách users
 
+    [Permission(MenuCode.User, ActionCode.View)]
+    public async Task<IActionResult> Index(string? search, int? roleId, int? storeId, int page = 1)
+    {
+        await SetPermissionViewBagAsync(MenuCode.User);
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return RedirectToAction("Login", "Auth");
+
+        var isAdministrator = await PermissionService.IsAdministratorAsync(currentUser.Id);
+        
+        // Query users
         var query = _context.Users
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-            .Include(u => u.UserStores)
-                .ThenInclude(us => us.Store)
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .Include(u => u.UserStores).ThenInclude(us => us.Store)
             .AsQueryable();
 
+        // Filter theo quyền:
+        // - Administrator: thấy tất cả
+        // - Admin: chỉ thấy users trong stores của mình (và users do mình quản lý)
+        if (!isAdministrator)
+        {
+            var myStoreIds = await _context.UserStores
+                .Where(us => us.UserId == currentUser.Id)
+                .Select(us => us.StoreId)
+                .ToListAsync();
+
+            query = query.Where(u => 
+                u.Id == currentUser.Id || // Bản thân
+                u.AdminId == currentUser.Id || // Users do mình tạo
+                u.UserStores.Any(us => myStoreIds.Contains(us.StoreId))); // Users trong stores của mình
+        }
+
+        // Filter by search
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.ToLower();
+            query = query.Where(u => 
+                u.Username.ToLower().Contains(search) ||
+                u.FullName.ToLower().Contains(search) ||
+                (u.Email != null && u.Email.ToLower().Contains(search)) ||
+                (u.Phone != null && u.Phone.Contains(search)));
+        }
+
+        // Filter by role
         if (roleId.HasValue)
         {
             query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == roleId));
         }
 
-        if (!string.IsNullOrEmpty(search))
+        // Filter by store
+        if (storeId.HasValue)
         {
-            query = query.Where(u =>
-                u.Username.Contains(search) ||
-                u.FullName.Contains(search) ||
-                (u.Email != null && u.Email.Contains(search)));
+            query = query.Where(u => u.UserStores.Any(us => us.StoreId == storeId));
         }
+
+        // Pagination
+        const int pageSize = 20;
+        var totalCount = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
         var users = await query
             .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(u => new UserListViewModel
+            {
+                Id = u.Id,
+                Username = u.Username,
+                FullName = u.FullName,
+                Email = u.Email,
+                Phone = u.Phone,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt,
+                RoleName = u.UserRoles.Select(ur => ur.Role.Name).FirstOrDefault(),
+                StoreNames = u.UserStores.Select(us => us.Store.Name).ToList()
+            })
             .ToListAsync();
 
-        ViewBag.Search = search;
-        ViewBag.RoleId = roleId;
-        ViewBag.Roles = await GetRoleSelectListAsync();
+        // Build filter
+        var filter = await BuildStoreFilterAsync(currentUser, isAdministrator);
 
-        return View(users);
+        var viewModel = new UserIndexViewModel
+        {
+            Users = users,
+            Filter = filter,
+            SearchTerm = search,
+            FilterRoleId = roleId,
+            CurrentPage = page,
+            TotalPages = totalPages,
+            TotalCount = totalCount
+        };
+
+        ViewBag.Roles = await GetRoleSelectListAsync(currentUser, isAdministrator);
+        ViewBag.Stores = await GetStoreSelectListAsync(currentUser, isAdministrator);
+
+        return View(viewModel);
     }
 
-    [Permission("USER", "VIEW")]
+    #endregion
+
+    #region Details
+
+    [Permission(MenuCode.User, ActionCode.View)]
     public async Task<IActionResult> Details(int id)
     {
         var user = await _context.Users
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-            .Include(u => u.UserStores)
-                .ThenInclude(us => us.Store)
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .Include(u => u.UserStores).ThenInclude(us => us.Store)
+            .Include(u => u.Admin)
             .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null) return NotFound();
+        if (user == null)
+        {
+            TempData[TempDataKey.Error] = Messages.UserNotFound;
+            return RedirectToAction(nameof(Index));
+        }
 
-        await SetPermissionViewBagAsync(MenuCode);
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return RedirectToAction("Login", "Auth");
+
+        var isAdministrator = await PermissionService.IsAdministratorAsync(currentUser.Id);
+        
+        // Check quyền xem
+        if (!await CanViewUserAsync(currentUser, isAdministrator, user))
+        {
+            TempData[TempDataKey.Error] = Messages.AccessDenied;
+            return RedirectToAction(nameof(Index));
+        }
+
+        await SetPermissionViewBagAsync(MenuCode.User);
         return View(user);
     }
 
-    [Permission("USER", "CREATE")]
+    #endregion
+
+    #region Create
+
+    [Permission(MenuCode.User, ActionCode.Create)]
     public async Task<IActionResult> Create()
     {
-        ViewBag.Roles = await GetRoleSelectListAsync();
-        ViewBag.Stores = await GetStoreSelectListAsync();
-        return View(new UserViewModel());
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return RedirectToAction("Login", "Auth");
+
+        var isAdministrator = await PermissionService.IsAdministratorAsync(currentUser.Id);
+
+        var viewModel = new CreateUserViewModel
+        {
+            AvailableRoles = await GetAssignableRolesAsync(currentUser, isAdministrator),
+            AvailableStores = await GetAssignableStoresAsync(currentUser, isAdministrator)
+        };
+
+        return View(viewModel);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("USER", "CREATE")]
-    public async Task<IActionResult> Create(UserViewModel model)
+    [Permission(MenuCode.User, ActionCode.Create)]
+    public async Task<IActionResult> Create(CreateUserViewModel model)
     {
-        if (string.IsNullOrEmpty(model.Password))
-        {
-            ModelState.AddModelError("Password", "Vui lòng nhập mật khẩu");
-        }
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return RedirectToAction("Login", "Auth");
 
-        if (await _context.Users.AnyAsync(u => u.Username == model.Username))
-        {
-            ModelState.AddModelError("Username", "Tên đăng nhập đã tồn tại");
-        }
+        var isAdministrator = await PermissionService.IsAdministratorAsync(currentUser.Id);
 
-        if (!ModelState.IsValid)
+        if (ModelState.IsValid)
         {
-            ViewBag.Roles = await GetRoleSelectListAsync();
-            ViewBag.Stores = await GetStoreSelectListAsync();
-            return View(model);
-        }
-
-        var user = new User
-        {
-            Username = model.Username,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
-            FullName = model.FullName,
-            Email = model.Email,
-            Phone = model.Phone,
-            IsActive = model.IsActive,
-            AdminId = model.AdminId ?? CurrentUserId,
-            CreatedAt = DateTime.Now
-        };
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        // Gắn Roles
-        foreach (var roleId in model.RoleIds)
-        {
-            _context.UserRoles.Add(new UserRole
+            // Validate username unique
+            if (await _context.Users.AnyAsync(u => u.Username == model.Username))
             {
-                UserId = user.Id,
-                RoleId = roleId,
-                AssignedAt = DateTime.Now
-            });
-        }
-
-        // Gắn Stores
-        foreach (var storeId in model.StoreIds)
-        {
-            _context.UserStores.Add(new UserStore
+                ModelState.AddModelError("Username", "Tên đăng nhập đã tồn tại");
+            }
+            // Validate role
+            else if (!await CanAssignRoleAsync(currentUser, isAdministrator, model.RoleId))
             {
-                UserId = user.Id,
-                StoreId = storeId,
-                AssignedAt = DateTime.Now
-            });
+                ModelState.AddModelError("RoleId", "Bạn không có quyền gán vai trò này");
+            }
+            // Validate stores
+            else if (!model.StoreIds.Any())
+            {
+                ModelState.AddModelError("StoreIds", "Vui lòng chọn ít nhất 1 cửa hàng");
+            }
+            else if (!await CanAssignStoresAsync(currentUser, isAdministrator, model.StoreIds))
+            {
+                ModelState.AddModelError("StoreIds", "Bạn không có quyền gán cửa hàng này");
+            }
+            else
+            {
+                var user = new User
+                {
+                    Username = model.Username,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
+                    FullName = model.FullName,
+                    Email = model.Email,
+                    Phone = model.Phone,
+                    IsActive = true,
+                    AdminId = isAdministrator ? null : currentUser.Id,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                // Add role
+                _context.UserRoles.Add(new UserRole
+                {
+                    UserId = user.Id,
+                    RoleId = model.RoleId,
+                    AssignedAt = DateTime.Now
+                });
+
+                // Add stores
+                bool isFirst = true;
+                foreach (var storeId in model.StoreIds)
+                {
+                    _context.UserStores.Add(new UserStore
+                    {
+                        UserId = user.Id,
+                        StoreId = storeId,
+                        IsDefault = isFirst,
+                        AssignedAt = DateTime.Now
+                    });
+                    isFirst = false;
+                }
+
+                await _context.SaveChangesAsync();
+
+                TempData[TempDataKey.Success] = Messages.CreateSuccess;
+                return RedirectToAction(nameof(Index));
+            }
         }
 
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = "Tạo người dùng thành công!";
-        return RedirectToAction(nameof(Index));
+        model.AvailableRoles = await GetAssignableRolesAsync(currentUser, isAdministrator);
+        model.AvailableStores = await GetAssignableStoresAsync(currentUser, isAdministrator);
+        return View(model);
     }
 
-    [Permission("USER", "EDIT")]
+    #endregion
+
+    #region Edit
+
+    [Permission(MenuCode.User, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id)
     {
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return RedirectToAction("Login", "Auth");
+
+        var isAdministrator = await PermissionService.IsAdministratorAsync(currentUser.Id);
+
         var user = await _context.Users
             .Include(u => u.UserRoles)
             .Include(u => u.UserStores)
             .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null) return NotFound();
+        if (user == null)
+        {
+            TempData[TempDataKey.Error] = Messages.UserNotFound;
+            return RedirectToAction(nameof(Index));
+        }
 
-        var model = new UserViewModel
+        // Check quyền edit
+        if (!await CanManageUserAsync(currentUser, isAdministrator, user))
+        {
+            TempData[TempDataKey.Error] = Messages.AccessDenied;
+            return RedirectToAction(nameof(Index));
+        }
+
+        var viewModel = new EditUserViewModel
         {
             Id = user.Id,
             Username = user.Username,
             FullName = user.FullName,
             Email = user.Email,
             Phone = user.Phone,
+            RoleId = user.UserRoles.FirstOrDefault()?.RoleId ?? 0,
+            StoreIds = user.UserStores.Select(us => us.StoreId).ToList(),
             IsActive = user.IsActive,
-            AdminId = user.AdminId,
-            RoleIds = user.UserRoles.Select(ur => ur.RoleId).ToList(),
-            StoreIds = user.UserStores.Select(us => us.StoreId).ToList()
+            AvailableRoles = await GetAssignableRolesAsync(currentUser, isAdministrator),
+            AvailableStores = await GetAssignableStoresAsync(currentUser, isAdministrator)
         };
 
-        ViewBag.Roles = await GetRoleSelectListAsync();
-        ViewBag.Stores = await GetStoreSelectListAsync();
-        return View(model);
+        return View(viewModel);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("USER", "EDIT")]
-    public async Task<IActionResult> Edit(int id, UserViewModel model)
+    [Permission(MenuCode.User, ActionCode.Edit)]
+    public async Task<IActionResult> Edit(int id, EditUserViewModel model)
     {
         if (id != model.Id) return NotFound();
 
-        if (!ModelState.IsValid)
-        {
-            ViewBag.Roles = await GetRoleSelectListAsync();
-            ViewBag.Stores = await GetStoreSelectListAsync();
-            return View(model);
-        }
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return RedirectToAction("Login", "Auth");
+
+        var isAdministrator = await PermissionService.IsAdministratorAsync(currentUser.Id);
 
         var user = await _context.Users
             .Include(u => u.UserRoles)
             .Include(u => u.UserStores)
             .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null) return NotFound();
-
-        user.Username = model.Username;
-        user.FullName = model.FullName;
-        user.Email = model.Email;
-        user.Phone = model.Phone;
-        user.IsActive = model.IsActive;
-        user.AdminId = model.AdminId;
-
-        if (!string.IsNullOrEmpty(model.Password))
+        if (user == null)
         {
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
+            TempData[TempDataKey.Error] = Messages.UserNotFound;
+            return RedirectToAction(nameof(Index));
         }
 
-        // Cập nhật Roles
-        _context.UserRoles.RemoveRange(user.UserRoles);
-        foreach (var roleId in model.RoleIds)
+        if (!await CanManageUserAsync(currentUser, isAdministrator, user))
         {
-            _context.UserRoles.Add(new UserRole
+            TempData[TempDataKey.Error] = Messages.AccessDenied;
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (ModelState.IsValid)
+        {
+            if (!await CanAssignRoleAsync(currentUser, isAdministrator, model.RoleId))
             {
-                UserId = user.Id,
-                RoleId = roleId,
-                AssignedAt = DateTime.Now
-            });
-        }
-
-        // Cập nhật Stores
-        _context.UserStores.RemoveRange(user.UserStores);
-        foreach (var storeId in model.StoreIds)
-        {
-            _context.UserStores.Add(new UserStore
+                ModelState.AddModelError("RoleId", "Bạn không có quyền gán vai trò này");
+            }
+            else if (!model.StoreIds.Any())
             {
-                UserId = user.Id,
-                StoreId = storeId,
-                AssignedAt = DateTime.Now
-            });
+                ModelState.AddModelError("StoreIds", "Vui lòng chọn ít nhất 1 cửa hàng");
+            }
+            else if (!await CanAssignStoresAsync(currentUser, isAdministrator, model.StoreIds))
+            {
+                ModelState.AddModelError("StoreIds", "Bạn không có quyền gán cửa hàng này");
+            }
+            else
+            {
+                user.FullName = model.FullName;
+                user.Email = model.Email;
+                user.Phone = model.Phone;
+                user.IsActive = model.IsActive;
+
+                if (!string.IsNullOrWhiteSpace(model.NewPassword))
+                {
+                    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+                }
+
+                // Update role
+                _context.UserRoles.RemoveRange(user.UserRoles);
+                _context.UserRoles.Add(new UserRole
+                {
+                    UserId = user.Id,
+                    RoleId = model.RoleId,
+                    AssignedAt = DateTime.Now
+                });
+
+                // Update stores
+                _context.UserStores.RemoveRange(user.UserStores);
+                bool isFirst = true;
+                foreach (var storeId in model.StoreIds)
+                {
+                    _context.UserStores.Add(new UserStore
+                    {
+                        UserId = user.Id,
+                        StoreId = storeId,
+                        IsDefault = isFirst,
+                        AssignedAt = DateTime.Now
+                    });
+                    isFirst = false;
+                }
+
+                await _context.SaveChangesAsync();
+
+                TempData[TempDataKey.Success] = Messages.UpdateSuccess;
+                return RedirectToAction(nameof(Index));
+            }
         }
 
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = "Cập nhật người dùng thành công!";
-        return RedirectToAction(nameof(Index));
+        model.AvailableRoles = await GetAssignableRolesAsync(currentUser, isAdministrator);
+        model.AvailableStores = await GetAssignableStoresAsync(currentUser, isAdministrator);
+        return View(model);
     }
+
+    #endregion
+
+    #region Delete
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("USER", "DELETE")]
+    [Permission(MenuCode.User, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return RedirectToAction("Login", "Auth");
+
+        var isAdministrator = await PermissionService.IsAdministratorAsync(currentUser.Id);
+
+        // Không xóa chính mình
+        if (id == currentUser.Id)
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa tài khoản của chính mình!";
+            return RedirectToAction(nameof(Index));
+        }
+
         var user = await _context.Users
-            .Include(u => u.UserRoles)
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
             .Include(u => u.UserStores)
             .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null) return NotFound();
-
-        // Không cho xóa chính mình
-        if (user.Id == CurrentUserId)
+        if (user == null)
         {
-            TempData["ErrorMessage"] = "Không thể xóa tài khoản của chính mình!";
+            TempData[TempDataKey.Error] = Messages.UserNotFound;
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!await CanManageUserAsync(currentUser, isAdministrator, user))
+        {
+            TempData[TempDataKey.Error] = Messages.AccessDenied;
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Không xóa Administrator
+        if (user.UserRoles.Any(ur => ur.Role.Name == "Administrator"))
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa tài khoản Administrator!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -263,22 +453,189 @@ public class UserController : BaseController
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Xóa người dùng thành công!";
+        TempData[TempDataKey.Success] = Messages.DeleteSuccess;
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task<List<SelectListItem>> GetRoleSelectListAsync()
+    #endregion
+
+    #region Toggle Status
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Permission(MenuCode.User, ActionCode.Edit)]
+    public async Task<IActionResult> ToggleStatus(int id)
     {
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return Json(new { success = false });
+
+        var isAdministrator = await PermissionService.IsAdministratorAsync(currentUser.Id);
+
+        var user = await _context.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == id);
+
+        if (user == null) return Json(new { success = false, message = "User không tồn tại" });
+
+        if (!await CanManageUserAsync(currentUser, isAdministrator, user))
+        {
+            return Json(new { success = false, message = "Bạn không có quyền thực hiện" });
+        }
+
+        // Không disable Administrator
+        if (user.UserRoles.Any(ur => ur.Role.Name == "Administrator"))
+        {
+            return Json(new { success = false, message = "Không thể vô hiệu hóa Administrator" });
+        }
+
+        user.IsActive = !user.IsActive;
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, isActive = user.IsActive });
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private async Task<List<Role>> GetAssignableRolesAsync(User currentUser, bool isAdministrator)
+    {
+        if (isAdministrator)
+        {
+            return await _context.Roles.OrderBy(r => r.Id).ToListAsync();
+        }
+        
+        // Admin chỉ gán được Leader, Staff
         return await _context.Roles
-            .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Name })
+            .Where(r => r.Name == "Leader" || r.Name == "Staff")
+            .OrderBy(r => r.Id)
             .ToListAsync();
     }
 
-    private async Task<List<SelectListItem>> GetStoreSelectListAsync()
+    private async Task<List<Store>> GetAssignableStoresAsync(User currentUser, bool isAdministrator)
     {
+        if (isAdministrator)
+        {
+            return await _context.Stores.Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync();
+        }
+
+        var storeIds = await _context.UserStores
+            .Where(us => us.UserId == currentUser.Id)
+            .Select(us => us.StoreId)
+            .ToListAsync();
+
         return await _context.Stores
-            .Where(s => s.IsActive)
-            .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
+            .Where(s => storeIds.Contains(s.Id) && s.IsActive)
+            .OrderBy(s => s.Name)
             .ToListAsync();
     }
+
+    private async Task<bool> CanAssignRoleAsync(User currentUser, bool isAdministrator, int roleId)
+    {
+        var roles = await GetAssignableRolesAsync(currentUser, isAdministrator);
+        return roles.Any(r => r.Id == roleId);
+    }
+
+    private async Task<bool> CanAssignStoresAsync(User currentUser, bool isAdministrator, List<int> storeIds)
+    {
+        if (!storeIds.Any()) return false;
+        var stores = await GetAssignableStoresAsync(currentUser, isAdministrator);
+        var ids = stores.Select(s => s.Id).ToHashSet();
+        return storeIds.All(id => ids.Contains(id));
+    }
+
+    private async Task<bool> CanViewUserAsync(User currentUser, bool isAdministrator, User targetUser)
+    {
+        if (isAdministrator) return true;
+        if (targetUser.Id == currentUser.Id) return true;
+
+        var myStoreIds = await _context.UserStores
+            .Where(us => us.UserId == currentUser.Id)
+            .Select(us => us.StoreId)
+            .ToListAsync();
+
+        return targetUser.UserStores.Any(us => myStoreIds.Contains(us.StoreId));
+    }
+
+    private async Task<bool> CanManageUserAsync(User currentUser, bool isAdministrator, User targetUser)
+    {
+        if (isAdministrator) return true;
+        if (targetUser.Id == currentUser.Id) return false; // Không tự edit/delete mình qua đây
+
+        var targetRoles = targetUser.UserRoles.Select(ur => ur.Role?.Name ?? "").ToList();
+        if (targetRoles.Contains("Administrator") || targetRoles.Contains("Admin"))
+            return false;
+
+        var myStoreIds = await _context.UserStores
+            .Where(us => us.UserId == currentUser.Id)
+            .Select(us => us.StoreId)
+            .ToListAsync();
+
+        return targetUser.UserStores.Any(us => myStoreIds.Contains(us.StoreId));
+    }
+
+    private async Task<List<SelectListItem>> GetRoleSelectListAsync(User currentUser, bool isAdministrator)
+    {
+        var roles = await GetAssignableRolesAsync(currentUser, isAdministrator);
+        return roles.Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Name }).ToList();
+    }
+
+    private async Task<List<SelectListItem>> GetStoreSelectListAsync(User currentUser, bool isAdministrator)
+    {
+        var stores = await GetAssignableStoresAsync(currentUser, isAdministrator);
+        return stores.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name }).ToList();
+    }
+
+    private async Task<StoreFilterViewModel> BuildStoreFilterAsync(User currentUser, bool isAdministrator)
+    {
+        var filter = new StoreFilterViewModel
+        {
+            IsAdministrator = isAdministrator,
+            IsAdmin = !isAdministrator
+        };
+
+        if (isAdministrator)
+        {
+            filter.AdminFilters = await _context.Users
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(u => u.UserStores)
+                .Where(u => u.UserRoles.Any(ur => ur.Role.Name == "Admin"))
+                .Select(u => new AdminFilterItem
+                {
+                    AdminId = u.Id,
+                    AdminName = u.FullName,
+                    StoreCount = u.UserStores.Count
+                })
+                .ToListAsync();
+
+            filter.StoreFilters = await _context.Stores
+                .Where(s => s.IsActive)
+                .Select(s => new StoreOptionItem
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Code = s.Code,
+                    Address = s.Address
+                })
+                .ToListAsync();
+        }
+        else
+        {
+            filter.StoreFilters = await _context.UserStores
+                .Include(us => us.Store)
+                .Where(us => us.UserId == currentUser.Id && us.Store.IsActive)
+                .Select(us => new StoreOptionItem
+                {
+                    Id = us.Store.Id,
+                    Name = us.Store.Name,
+                    Code = us.Store.Code,
+                    Address = us.Store.Address
+                })
+                .ToListAsync();
+        }
+
+        return filter;
+    }
+
+    #endregion
 }

@@ -1,4 +1,5 @@
 using CoffeSolution.Attributes;
+using CoffeSolution.Constants;
 using CoffeSolution.Data;
 using CoffeSolution.Models.Entities;
 using CoffeSolution.Services;
@@ -11,7 +12,7 @@ namespace CoffeSolution.Controllers;
 public class WarehouseController : BaseController
 {
     private readonly ApplicationDbContext _context;
-    private const string MenuCode = "WAREHOUSE";
+    private const string _menuId = MenuCode.Warehouse;
 
     public WarehouseController(
         ApplicationDbContext context,
@@ -22,10 +23,10 @@ public class WarehouseController : BaseController
         _context = context;
     }
 
-    [Permission("WAREHOUSE", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Index(int? storeId, DateTime? fromDate, DateTime? toDate)
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var query = _context.WarehouseReceipts
             .Include(wr => wr.Store)
@@ -62,7 +63,7 @@ public class WarehouseController : BaseController
         return View(receipts);
     }
 
-    [Permission("WAREHOUSE", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Details(int id)
     {
         var receipt = await _context.WarehouseReceipts
@@ -75,11 +76,11 @@ public class WarehouseController : BaseController
 
         if (receipt == null) return NotFound();
 
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
         return View(receipt);
     }
 
-    [Permission("WAREHOUSE", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create()
     {
         ViewBag.Stores = await GetStoreSelectListAsync();
@@ -89,12 +90,12 @@ public class WarehouseController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("WAREHOUSE", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create(int storeId, int supplierId, string? note, List<WarehouseReceiptDetailInput> items)
     {
         if (!items.Any())
         {
-            TempData["ErrorMessage"] = "Vui lòng thêm ít nhất một sản phẩm!";
+            TempData[TempDataKey.Error] = "Vui lòng thêm ít nhất một sản phẩm!";
             ViewBag.Stores = await GetStoreSelectListAsync();
             ViewBag.Suppliers = await GetSupplierSelectListAsync();
             return View();
@@ -137,13 +138,13 @@ public class WarehouseController : BaseController
 
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Nhập kho thành công!";
+        TempData[TempDataKey.Success] = "Nhập kho thành công!";
         return RedirectToAction(nameof(Details), new { id = receipt.Id });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("WAREHOUSE", "DELETE")]
+    [Permission(_menuId, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
         var receipt = await _context.WarehouseReceipts
@@ -166,7 +167,7 @@ public class WarehouseController : BaseController
         _context.WarehouseReceipts.Remove(receipt);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Xóa phiếu nhập kho thành công!";
+        TempData[TempDataKey.Success] = "Xóa phiếu nhập kho thành công!";
         return RedirectToAction(nameof(Index));
     }
 

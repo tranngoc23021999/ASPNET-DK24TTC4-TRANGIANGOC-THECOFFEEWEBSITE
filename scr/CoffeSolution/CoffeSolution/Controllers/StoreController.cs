@@ -1,4 +1,5 @@
 using CoffeSolution.Attributes;
+using CoffeSolution.Constants;
 using CoffeSolution.Data;
 using CoffeSolution.Models.Entities;
 using CoffeSolution.Services;
@@ -11,7 +12,7 @@ namespace CoffeSolution.Controllers;
 public class StoreController : BaseController
 {
     private readonly ApplicationDbContext _context;
-    private const string MenuCode = "STORE";
+    private const string _menuId = MenuCode.Store;
 
     public StoreController(
         ApplicationDbContext context,
@@ -22,10 +23,10 @@ public class StoreController : BaseController
         _context = context;
     }
 
-    [Permission("STORE", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Index(string? search, int page = 1)
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var query = _context.Stores
             .Include(s => s.Owner)
@@ -67,7 +68,7 @@ public class StoreController : BaseController
         return View(stores);
     }
 
-    [Permission("STORE", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Details(int id)
     {
         var store = await _context.Stores
@@ -85,11 +86,11 @@ public class StoreController : BaseController
             return RedirectToAction("AccessDenied", "Auth");
         }
 
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
         return View(store);
     }
 
-    [Permission("STORE", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public IActionResult Create()
     {
         return View(new StoreViewModel());
@@ -97,7 +98,7 @@ public class StoreController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("STORE", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create(StoreViewModel model)
     {
         if (!ModelState.IsValid)
@@ -120,11 +121,11 @@ public class StoreController : BaseController
         _context.Stores.Add(store);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Tạo cửa hàng thành công!";
+        TempData[TempDataKey.Success] = "Tạo cửa hàng thành công!";
         return RedirectToAction(nameof(Index));
     }
 
-    [Permission("STORE", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id)
     {
         var store = await _context.Stores.FindAsync(id);
@@ -153,7 +154,7 @@ public class StoreController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("STORE", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id, StoreViewModel model)
     {
         if (id != model.Id) return NotFound();
@@ -182,13 +183,13 @@ public class StoreController : BaseController
 
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Cập nhật cửa hàng thành công!";
+        TempData[TempDataKey.Success] = "Cập nhật cửa hàng thành công!";
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("STORE", "DELETE")]
+    [Permission(_menuId, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
         var store = await _context.Stores.FindAsync(id);
@@ -204,7 +205,7 @@ public class StoreController : BaseController
         _context.Stores.Remove(store);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Xóa cửa hàng thành công!";
+        TempData[TempDataKey.Success] = "Xóa cửa hàng thành công!";
         return RedirectToAction(nameof(Index));
     }
 }

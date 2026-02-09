@@ -1,4 +1,5 @@
 using CoffeSolution.Attributes;
+using CoffeSolution.Constants;
 using CoffeSolution.Data;
 using CoffeSolution.Models.Entities;
 using CoffeSolution.Services;
@@ -8,11 +9,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeSolution.Controllers;
 
+/// <summary>
+/// Controller quản lý Roles và Permissions
+/// Chỉ Administrator mới có quyền quản lý roles
+/// </summary>
 public class RoleController : BaseController
 {
     private readonly ApplicationDbContext _context;
-    private const string MenuCode = "ROLE";
-
+    private const string _menuId = MenuCode.Role;
     public RoleController(
         ApplicationDbContext context,
         IAuthService authService,
@@ -22,19 +26,29 @@ public class RoleController : BaseController
         _context = context;
     }
 
-    [Permission("ROLE", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Index()
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var roles = await _context.Roles
             .Include(r => r.UserRoles)
+            .OrderBy(r => r.Id)
+            .Select(r => new RoleListViewModel
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description,
+                IsSystem = r.IsSystem,
+                UserCount = r.UserRoles.Count,
+                CreatedAt = r.CreatedAt
+            })
             .ToListAsync();
 
         return View(roles);
     }
 
-    [Permission("ROLE", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Details(int id)
     {
         var role = await _context.Roles
@@ -48,11 +62,11 @@ public class RoleController : BaseController
 
         if (role == null) return NotFound();
 
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
         return View(role);
     }
 
-    [Permission("ROLE", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create()
     {
         ViewBag.Menus = await GetMenusWithActionsAsync();
@@ -61,7 +75,7 @@ public class RoleController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("ROLE", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create(RoleViewModel model)
     {
         if (await _context.Roles.AnyAsync(r => r.Name == model.Name))
@@ -88,11 +102,11 @@ public class RoleController : BaseController
         // Gắn Permissions
         await SavePermissionsAsync(role.Id, model.Permissions);
 
-        TempData["SuccessMessage"] = "Tạo vai trò thành công!";
+        TempData[TempDataKey.Success] = Messages.CreateSuccess;
         return RedirectToAction(nameof(Index));
     }
 
-    [Permission("ROLE", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id)
     {
         var role = await _context.Roles
@@ -107,7 +121,7 @@ public class RoleController : BaseController
         // Không cho sửa role system
         if (role.IsSystem)
         {
-            TempData["ErrorMessage"] = "Không thể sửa vai trò hệ thống!";
+            TempData[TempDataKey.Error] = "Không thể sửa vai trò hệ thống!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -129,7 +143,7 @@ public class RoleController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("ROLE", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id, RoleViewModel model)
     {
         if (id != model.Id) return NotFound();
@@ -148,7 +162,7 @@ public class RoleController : BaseController
 
         if (role.IsSystem)
         {
-            TempData["ErrorMessage"] = "Không thể sửa vai trò hệ thống!";
+            TempData[TempDataKey.Error] = "Không thể sửa vai trò hệ thống!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -162,13 +176,13 @@ public class RoleController : BaseController
         // Gắn permissions mới
         await SavePermissionsAsync(role.Id, model.Permissions);
 
-        TempData["SuccessMessage"] = "Cập nhật vai trò thành công!";
+        TempData[TempDataKey.Success] = Messages.UpdateSuccess;
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("ROLE", "DELETE")]
+    [Permission(_menuId, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
         var role = await _context.Roles
@@ -180,13 +194,13 @@ public class RoleController : BaseController
 
         if (role.IsSystem)
         {
-            TempData["ErrorMessage"] = "Không thể xóa vai trò hệ thống!";
+            TempData[TempDataKey.Error] = "Không thể xóa vai trò hệ thống!";
             return RedirectToAction(nameof(Index));
         }
 
         if (role.UserRoles.Any())
         {
-            TempData["ErrorMessage"] = "Không thể xóa vai trò đang được sử dụng!";
+            TempData[TempDataKey.Error] = "Không thể xóa vai trò đang được sử dụng!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -194,7 +208,7 @@ public class RoleController : BaseController
         _context.Roles.Remove(role);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Xóa vai trò thành công!";
+        TempData[TempDataKey.Success] = Messages.DeleteSuccess;
         return RedirectToAction(nameof(Index));
     }
 

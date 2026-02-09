@@ -1,4 +1,5 @@
 using CoffeSolution.Attributes;
+using CoffeSolution.Constants;
 using CoffeSolution.Data;
 using CoffeSolution.Models.Entities;
 using CoffeSolution.Services;
@@ -12,8 +13,7 @@ namespace CoffeSolution.Controllers;
 public class OrderController : BaseController
 {
     private readonly ApplicationDbContext _context;
-    private const string MenuCode = "ORDER";
-
+    private const string _menuId = MenuCode.Order;
     public OrderController(
         ApplicationDbContext context,
         IAuthService authService,
@@ -23,10 +23,10 @@ public class OrderController : BaseController
         _context = context;
     }
 
-    [Permission("ORDER", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Index(string? search, int? storeId, string? status, DateTime? fromDate, DateTime? toDate)
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var query = _context.Orders
             .Include(o => o.Store)
@@ -72,7 +72,7 @@ public class OrderController : BaseController
         return View(orders);
     }
 
-    [Permission("ORDER", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Details(int id)
     {
         var order = await _context.Orders
@@ -84,11 +84,11 @@ public class OrderController : BaseController
 
         if (order == null) return NotFound();
 
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(MenuCode.Order);
         return View(order);
     }
 
-    [Permission("ORDER", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create()
     {
         ViewBag.Stores = await GetStoreSelectListAsync();
@@ -97,7 +97,7 @@ public class OrderController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("ORDER", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create(OrderViewModel model)
     {
         if (!ModelState.IsValid)
@@ -121,13 +121,13 @@ public class OrderController : BaseController
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Tạo đơn hàng thành công!";
+        TempData[TempDataKey.Success] = "Tạo đơn hàng thành công!";
         return RedirectToAction(nameof(Details), new { id = order.Id });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("ORDER", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> UpdateStatus(int id, string status)
     {
         var order = await _context.Orders.FindAsync(id);
@@ -136,13 +136,13 @@ public class OrderController : BaseController
         order.Status = status;
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Cập nhật trạng thái thành công!";
+        TempData[TempDataKey.Success] = "Cập nhật trạng thái thành công!";
         return RedirectToAction(nameof(Details), new { id });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("ORDER", "DELETE")]
+    [Permission(_menuId, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
         var order = await _context.Orders
@@ -155,7 +155,7 @@ public class OrderController : BaseController
         _context.Orders.Remove(order);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Xóa đơn hàng thành công!";
+        TempData[TempDataKey.Success] = "Xóa đơn hàng thành công!";
         return RedirectToAction(nameof(Index));
     }
 

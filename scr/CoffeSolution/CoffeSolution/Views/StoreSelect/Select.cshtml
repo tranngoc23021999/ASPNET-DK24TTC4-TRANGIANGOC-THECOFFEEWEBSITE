@@ -1,0 +1,240 @@
+@model CoffeSolution.ViewModels.SelectStoreViewModel
+
+@{
+    ViewData["Title"] = "Chọn cửa hàng";
+    Layout = "_LayoutAuth";
+}
+
+<div class="select-store-container">
+    <div class="select-store-card">
+        <div class="card-header">
+            <div class="logo">
+                <i class="bi bi-cup-hot-fill"></i>
+            </div>
+            <h2>Chọn cửa hàng làm việc</h2>
+            <p class="text-muted">Vui lòng chọn cửa hàng bạn muốn truy cập</p>
+        </div>
+
+        <form method="post" asp-action="Select" asp-controller="StoreSelect">
+            <input type="hidden" asp-for="ReturnUrl" />
+            @Html.AntiForgeryToken()
+
+            <div class="store-list">
+                @foreach (var store in Model.Stores)
+                {
+                    <label class="store-option @(store.IsDefault ? "default" : "")">
+                        <input type="radio" 
+                               name="storeId" 
+                               value="@store.Id" 
+                               @(store.Id == Model.SelectedStoreId ? "checked" : "") />
+                        <div class="store-info">
+                            <div class="store-icon">
+                                <i class="bi bi-shop"></i>
+                            </div>
+                            <div class="store-details">
+                                <h4>@store.Name</h4>
+                                @if (!string.IsNullOrEmpty(store.Code))
+                                {
+                                    <span class="store-code">@store.Code</span>
+                                }
+                                @if (!string.IsNullOrEmpty(store.Address))
+                                {
+                                    <p class="store-address">
+                                        <i class="bi bi-geo-alt"></i> @store.Address
+                                    </p>
+                                }
+                            </div>
+                            @if (store.IsDefault)
+                            {
+                                <span class="default-badge">Mặc định</span>
+                            }
+                            <div class="check-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                        </div>
+                    </label>
+                }
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="bi bi-box-arrow-in-right"></i> Tiếp tục
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+<style>
+    .select-store-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #2C1810 0%, #4A2C2A 50%, #6F4E37 100%);
+    }
+
+    .select-store-card {
+        background: #FAF8F5;
+        border-radius: 16px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .logo {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #6F4E37, #C68642);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    .logo i {
+        font-size: 32px;
+        color: white;
+    }
+
+    .card-header h2 {
+        color: #2C1810;
+        margin: 0 0 8px;
+        font-weight: 600;
+    }
+
+    .store-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .store-option {
+        cursor: pointer;
+        display: block;
+    }
+
+    .store-option input {
+        display: none;
+    }
+
+    .store-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        border: 2px solid #e0d5c8;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .store-option:hover .store-info {
+        border-color: #A67B5B;
+        background: #fff;
+    }
+
+    .store-option input:checked + .store-info {
+        border-color: #6F4E37;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(111, 78, 55, 0.15);
+    }
+
+    .store-icon {
+        width: 48px;
+        height: 48px;
+        background: #F5F0E8;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .store-icon i {
+        font-size: 24px;
+        color: #6F4E37;
+    }
+
+    .store-details {
+        flex: 1;
+    }
+
+    .store-details h4 {
+        margin: 0 0 4px;
+        color: #2C1810;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .store-code {
+        display: inline-block;
+        background: #e0d5c8;
+        color: #6F4E37;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-bottom: 4px;
+    }
+
+    .store-address {
+        margin: 0;
+        color: #8B7355;
+        font-size: 13px;
+    }
+
+    .store-address i {
+        margin-right: 4px;
+    }
+
+    .default-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #C68642;
+        color: white;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    .check-icon {
+        display: none;
+        color: #6F4E37;
+        font-size: 24px;
+    }
+
+    .store-option input:checked + .store-info .check-icon {
+        display: block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6F4E37, #4A2C2A);
+        border: none;
+        padding: 14px 28px;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #4A2C2A, #2C1810);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(74, 44, 42, 0.4);
+    }
+
+    .btn-primary i {
+        margin-right: 8px;
+    }
+</style>
+}

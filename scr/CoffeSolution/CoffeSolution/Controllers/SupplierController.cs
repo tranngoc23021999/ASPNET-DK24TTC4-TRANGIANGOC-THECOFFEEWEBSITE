@@ -1,4 +1,5 @@
 using CoffeSolution.Attributes;
+using CoffeSolution.Constants;
 using CoffeSolution.Data;
 using CoffeSolution.Models.Entities;
 using CoffeSolution.Services;
@@ -11,7 +12,7 @@ namespace CoffeSolution.Controllers;
 public class SupplierController : BaseController
 {
     private readonly ApplicationDbContext _context;
-    private const string MenuCode = "SUPPLIER";
+    private const string _menuId = MenuCode.Supplier;
 
     public SupplierController(
         ApplicationDbContext context,
@@ -22,10 +23,10 @@ public class SupplierController : BaseController
         _context = context;
     }
 
-    [Permission("SUPPLIER", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Index(string? search)
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var query = _context.Suppliers.AsQueryable();
 
@@ -45,7 +46,7 @@ public class SupplierController : BaseController
         return View(suppliers);
     }
 
-    [Permission("SUPPLIER", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public IActionResult Create()
     {
         return View(new SupplierViewModel());
@@ -53,7 +54,7 @@ public class SupplierController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("SUPPLIER", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create(SupplierViewModel model)
     {
         if (!ModelState.IsValid)
@@ -75,11 +76,11 @@ public class SupplierController : BaseController
         _context.Suppliers.Add(supplier);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Tạo nhà cung cấp thành công!";
+        TempData[TempDataKey.Success] = "Tạo nhà cung cấp thành công!";
         return RedirectToAction(nameof(Index));
     }
 
-    [Permission("SUPPLIER", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id)
     {
         var supplier = await _context.Suppliers.FindAsync(id);
@@ -101,7 +102,7 @@ public class SupplierController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("SUPPLIER", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id, SupplierViewModel model)
     {
         if (id != model.Id) return NotFound();
@@ -123,13 +124,13 @@ public class SupplierController : BaseController
 
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Cập nhật nhà cung cấp thành công!";
+        TempData[TempDataKey.Success] = "Cập nhật nhà cung cấp thành công!";
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("SUPPLIER", "DELETE")]
+    [Permission(_menuId, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
         var supplier = await _context.Suppliers.FindAsync(id);
@@ -138,7 +139,7 @@ public class SupplierController : BaseController
         _context.Suppliers.Remove(supplier);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Xóa nhà cung cấp thành công!";
+        TempData[TempDataKey.Success] = "Xóa nhà cung cấp thành công!";
         return RedirectToAction(nameof(Index));
     }
 }

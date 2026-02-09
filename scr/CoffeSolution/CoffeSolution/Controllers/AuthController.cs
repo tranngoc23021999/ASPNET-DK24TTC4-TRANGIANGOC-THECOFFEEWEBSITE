@@ -36,7 +36,7 @@ public class AuthController : Controller
             return View(model);
         }
 
-        var (success, message, _) = await _authService.LoginAsync(model.Username, model.Password);
+        var (success, message, user) = await _authService.LoginAsync(model.Username, model.Password);
 
         if (!success)
         {
@@ -44,13 +44,10 @@ public class AuthController : Controller
             return View(model);
         }
 
-        if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-        {
-            return Redirect(model.ReturnUrl);
-        }
-
-        return RedirectToAction("Index", "Home");
+        // Redirect đến Store Selection (sẽ tự động xử lý logic)
+        return RedirectToAction("Select", "StoreSelect", new { returnUrl = model.ReturnUrl });
     }
+
 
     [HttpGet]
     public async Task<IActionResult> Logout()

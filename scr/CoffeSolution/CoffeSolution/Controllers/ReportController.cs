@@ -1,4 +1,5 @@
 using CoffeSolution.Attributes;
+using CoffeSolution.Constants;
 using CoffeSolution.Data;
 using CoffeSolution.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ namespace CoffeSolution.Controllers;
 public class ReportController : BaseController
 {
     private readonly ApplicationDbContext _context;
-    private const string MenuCode = "REPORT";
+    private const string _menuId = MenuCode.Report;
 
     public ReportController(
         ApplicationDbContext context,
@@ -21,10 +22,10 @@ public class ReportController : BaseController
         _context = context;
     }
 
-    [Permission("REPORT", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Index()
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
         var allowedStoreIds = isAdmin ? null : await GetAllowedStoreIdsAsync();
@@ -72,10 +73,10 @@ public class ReportController : BaseController
         return View();
     }
 
-    [Permission("REPORT", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Sales(int? storeId, DateTime? fromDate, DateTime? toDate)
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var from = fromDate ?? DateTime.Today.AddDays(-30);
         var to = toDate ?? DateTime.Today;
@@ -131,10 +132,10 @@ public class ReportController : BaseController
         return View();
     }
 
-    [Permission("REPORT", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Products(int? storeId)
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
 

@@ -1,4 +1,5 @@
 using CoffeSolution.Attributes;
+using CoffeSolution.Constants;
 using CoffeSolution.Data;
 using CoffeSolution.Models.Entities;
 using CoffeSolution.Services;
@@ -12,7 +13,7 @@ namespace CoffeSolution.Controllers;
 public class ProductController : BaseController
 {
     private readonly ApplicationDbContext _context;
-    private const string MenuCode = "PRODUCT";
+    private const string _menuId = MenuCode.Product;
 
     public ProductController(
         ApplicationDbContext context,
@@ -23,10 +24,10 @@ public class ProductController : BaseController
         _context = context;
     }
 
-    [Permission("PRODUCT", "VIEW")]
+    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Index(string? search, int? storeId, int page = 1)
     {
-        await SetPermissionViewBagAsync(MenuCode);
+        await SetPermissionViewBagAsync(_menuId);
 
         var query = _context.Products
             .Include(p => p.Store)
@@ -74,7 +75,7 @@ public class ProductController : BaseController
         return View(products);
     }
 
-    [Permission("PRODUCT", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create()
     {
         ViewBag.Stores = await GetStoreSelectListAsync();
@@ -84,7 +85,7 @@ public class ProductController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("PRODUCT", "CREATE")]
+    [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create(ProductViewModel model)
     {
         if (!ModelState.IsValid)
@@ -111,11 +112,11 @@ public class ProductController : BaseController
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Tạo sản phẩm thành công!";
+        TempData[TempDataKey.Success] = "Tạo sản phẩm thành công!";
         return RedirectToAction(nameof(Index));
     }
 
-    [Permission("PRODUCT", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id)
     {
         var product = await _context.Products.FindAsync(id);
@@ -142,7 +143,7 @@ public class ProductController : BaseController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("PRODUCT", "EDIT")]
+    [Permission(_menuId, ActionCode.Edit)]
     public async Task<IActionResult> Edit(int id, ProductViewModel model)
     {
         if (id != model.Id) return NotFound();
@@ -169,13 +170,13 @@ public class ProductController : BaseController
 
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Cập nhật sản phẩm thành công!";
+        TempData[TempDataKey.Success] = "Cập nhật sản phẩm thành công!";
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Permission("PRODUCT", "DELETE")]
+    [Permission(_menuId, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
         var product = await _context.Products.FindAsync(id);
@@ -184,7 +185,7 @@ public class ProductController : BaseController
         _context.Products.Remove(product);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Xóa sản phẩm thành công!";
+        TempData[TempDataKey.Success] = "Xóa sản phẩm thành công!";
         return RedirectToAction(nameof(Index));
     }
 

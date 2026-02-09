@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using CoffeSolution.Models.Entities;
+using CoffeSolution.Constants;
 
 namespace CoffeSolution.Data;
 
@@ -71,19 +72,19 @@ public static class DbInitializer
 
         var menus = new List<Menu>
         {
-            new() { Code = "DASHBOARD", Name = "Dashboard", Url = "/", Icon = "fa-dashboard", Order = 1 },
-            new() { Code = "STORE", Name = "Cửa hàng", Url = "/Store", Icon = "fa-store", Order = 2 },
-            new() { Code = "PRODUCT", Name = "Sản phẩm", Url = "/Product", Icon = "fa-coffee", Order = 3 },
-            new() { Code = "ORDER", Name = "Đơn hàng", Url = "/Order", Icon = "fa-shopping-cart", Order = 4 },
-            new() { Code = "POS", Name = "Bán hàng", Url = "/POS", Icon = "fa-cash-register", Order = 5 },
-            new() { Code = "WAREHOUSE", Name = "Kho hàng", Url = "/Warehouse", Icon = "fa-warehouse", Order = 6 },
-            new() { Code = "SUPPLIER", Name = "Nhà cung cấp", Url = "/Supplier", Icon = "fa-truck", Order = 7 },
-            new() { Code = "CUSTOMER", Name = "Khách hàng", Url = "/Customer", Icon = "fa-users", Order = 8 },
-            new() { Code = "EMPLOYEE", Name = "Nhân viên", Url = "/Employee", Icon = "fa-user-tie", Order = 9 },
-            new() { Code = "REPORT", Name = "Báo cáo", Url = "/Report", Icon = "fa-chart-bar", Order = 10 },
-            new() { Code = "USER", Name = "Người dùng", Url = "/User", Icon = "fa-user-cog", Order = 11 },
-            new() { Code = "ROLE", Name = "Phân quyền", Url = "/Role", Icon = "fa-shield-alt", Order = 12 },
-            new() { Code = "SETTING", Name = "Cài đặt", Url = "/Setting", Icon = "fa-cog", Order = 13 }
+            new() { Code = MenuCode.Dashboard, Name = "Dashboard", Url = "/", Icon = "fa-dashboard", Order = 1 },
+            new() { Code = MenuCode.Store, Name = "Cửa hàng", Url = "/Store", Icon = "fa-store", Order = 2 },
+            new() { Code = MenuCode.Product, Name = "Sản phẩm", Url = "/Product", Icon = "fa-coffee", Order = 3 },
+            new() { Code = MenuCode.Order, Name = "Đơn hàng", Url = "/Order", Icon = "fa-shopping-cart", Order = 4 },
+            new() { Code = MenuCode.POS, Name = "Bán hàng", Url = "/POS", Icon = "fa-cash-register", Order = 5 },
+            new() { Code = MenuCode.Warehouse, Name = "Kho hàng", Url = "/Warehouse", Icon = "fa-warehouse", Order = 6 },
+            new() { Code = MenuCode.Supplier, Name = "Nhà cung cấp", Url = "/Supplier", Icon = "fa-truck", Order = 7 },
+            new() { Code = MenuCode.Customer, Name = "Khách hàng", Url = "/Customer", Icon = "fa-users", Order = 8 },
+            new() { Code = MenuCode.Employee, Name = "Nhân viên", Url = "/Employee", Icon = "fa-user-tie", Order = 9 },
+            new() { Code = MenuCode.Report, Name = "Báo cáo", Url = "/Report", Icon = "fa-chart-bar", Order = 10 },
+            new() { Code = MenuCode.User, Name = "Người dùng", Url = "/User", Icon = "fa-user-cog", Order = 11 },
+            new() { Code = MenuCode.Role, Name = "Phân quyền", Url = "/Role", Icon = "fa-shield-alt", Order = 12 },
+            new() { Code = MenuCode.Setting, Name = "Cài đặt", Url = "/Setting", Icon = "fa-cog", Order = 13 }
         };
 
         context.Menus.AddRange(menus);
@@ -108,11 +109,11 @@ public static class DbInitializer
         // Actions chuẩn cho mỗi menu
         var standardActions = new[]
         {
-            ("VIEW", "Xem", 1),
-            ("CREATE", "Thêm", 2),
-            ("EDIT", "Sửa", 3),
-            ("DELETE", "Xóa", 4),
-            ("EXPORT", "Xuất file", 5)
+            (ActionCode.View, "Xem", 1),
+            (ActionCode.Create, "Thêm", 2),
+            (ActionCode.Edit, "Sửa", 3),
+            (ActionCode.Delete, "Xóa", 4),
+            (ActionCode.Export, "Xuất file", 5)
         };
 
         foreach (var menu in menus)
