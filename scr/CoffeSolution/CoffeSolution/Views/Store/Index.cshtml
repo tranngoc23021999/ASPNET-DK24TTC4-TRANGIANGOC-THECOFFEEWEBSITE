@@ -1,0 +1,137 @@
+@model IEnumerable<CoffeSolution.ViewModels.StoreListViewModel>
+@{
+    ViewData["Title"] = "Quản lý cửa hàng";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Quản lý cửa hàng</h1>
+    <div class="page-actions">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Thêm cửa hàng
+        </a>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Tìm theo tên, địa chỉ..." value="@ViewBag.Search" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active">Hoạt động</option>
+                    <option value="inactive">Ngừng hoạt động</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-grow-1">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+                <a href="/Store" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Store List -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã</th>
+                        <th>Tên cửa hàng</th>
+                        <th>Địa chỉ</th>
+                        <th>Điện thoại</th>
+                        <th>Chủ sở hữu</th>
+                        <th>Nhân viên</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var store in Model)
+                        {
+                            <tr>
+                                <td><strong>@(store.Code ?? "-")</strong></td>
+                                <td>
+                                    <i class="bi bi-shop text-coffee-medium"></i>
+                                    @store.Name
+                                </td>
+                                <td>@store.Address</td>
+                                <td>@store.Phone</td>
+                                <td>@store.OwnerName</td>
+                                <td>@store.StaffCount</td>
+                                <td>
+                                    @if (store.IsActive)
+                                    {
+                                        <span class="badge badge-success">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">Ngừng</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Edit" asp-route-id="@store.Id" class="btn btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Details" asp-route-id="@store.Id" class="btn btn-outline-info">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" onclick="deleteStore(@store.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-shop" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-2">Chưa có cửa hàng nào</p>
+                                <a asp-action="Create" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Thêm cửa hàng đầu tiên
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function deleteStore(id) {
+            if (confirm('Bạn có chắc muốn xóa cửa hàng này?')) {
+                fetch(`/Store/Delete/${id}`, { 
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(r => r.ok ? location.reload() : alert('Lỗi: Không thể xóa cửa hàng này (Có thể đang có dữ liệu liên quan)'));
+            }
+        }
+    </script>
+}

@@ -1,0 +1,239 @@
+﻿@using CoffeSolution.Models.Entities
+@{
+    ViewData["Title"] = "Dashboard";
+}
+@model CoffeSolution.ViewModels.DashboardViewModel
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <div class="page-actions">
+        <button class="btn btn-outline-primary">
+            <i class="bi bi-download"></i> Xuất báo cáo
+        </button>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <div class="stat-value">@Model.TotalRevenueToday.ToString("N0")đ</div>
+                <div class="stat-label">Doanh thu hôm nay</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-receipt"></i>
+                </div>
+                <div class="stat-value">@Model.TotalOrdersToday</div>
+                <div class="stat-label">Đơn hàng hôm nay</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-cup-hot"></i>
+                </div>
+                <div class="stat-value">@Model.TotalProducts</div>
+                <div class="stat-label">Sản phẩm đang bán</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <div class="stat-value">@Model.ActiveStores</div>
+                <div class="stat-label">Cửa hàng hoạt động</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Doanh thu 7 ngày qua</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active">7 ngày</button>
+                    <button class="btn btn-outline-secondary">30 ngày</button>
+                    <button class="btn btn-outline-secondary">Tháng này</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-placeholder">
+                    <i class="bi bi-bar-chart-fill"></i>
+                    <p>Biểu đồ doanh thu</p>
+                    <small class="text-muted">Chart.js hoặc thư viện khác sẽ được tích hợp tại đây</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Sản phẩm bán chạy</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.TopSellingProducts != null && Model.TopSellingProducts.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var product in Model.TopSellingProducts)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div>
+                                    <h6 class="mb-0">@product.ProductName</h6>
+                                    <small class="text-muted">Đã bán: @product.QuantitySold</small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">@product.TotalRevenue.ToString("N0")đ</span>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                         <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                         <p class="text-muted mt-2">Chưa có dữ liệu</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Orders & Quick Actions -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Đơn hàng gần đây</h5>
+                <a href="/Order" class="text-decoration-none">Xem tất cả <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Cửa hàng</th>
+                                <th>Nhân viên</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentOrders != null && Model.RecentOrders.Any())
+                            {
+                                foreach (var order in Model.RecentOrders)
+                                {
+                                    <tr>
+                                        <td><strong>@order.OrderCode</strong></td>
+                                        <td>@order.Store?.Name</td>
+                                        <td>@order.Staff?.FullName</td>
+                                        <td class="text-mono">@order.TotalAmount.ToString("N0")đ</td>
+                                        <td>
+                                            @if (order.Status == "Completed")
+                                            {
+                                                <span class="badge bg-success">Hoàn thành</span>
+                                            }
+                                            else if (order.Status == "Pending")
+                                            {
+                                                <span class="badge bg-warning text-dark">Chờ xử lý</span>
+                                            }
+                                            else if (order.Status == "Cancelled")
+                                            {
+                                                <span class="badge bg-danger">Đã hủy</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@order.Status</span>
+                                            }
+                                        </td>
+                                        <td>@order.CreatedAt.ToString("HH:mm dd/MM")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">Chưa có đơn hàng nào</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Thao tác nhanh</h5>
+            </div>
+            <div class="card-body">
+                <div class="quick-actions">
+                    <a href="/Order/Create" class="quick-action-item">
+                        <div class="quick-action-icon">
+                            <i class="bi bi-plus-circle-fill"></i>
+                        </div>
+                        <div class="quick-action-text">
+                            <strong>Tạo đơn hàng mới</strong>
+                            <small>Thêm đơn hàng thủ công</small>
+                        </div>
+                    </a>
+
+                    <a href="/Product/Create" class="quick-action-item">
+                        <div class="quick-action-icon">
+                            <i class="bi bi-cup-hot-fill"></i>
+                        </div>
+                        <div class="quick-action-text">
+                            <strong>Thêm sản phẩm</strong>
+                            <small>Tạo sản phẩm mới</small>
+                        </div>
+                    </a>
+
+                    <a href="/Warehouse/Create" class="quick-action-item">
+                        <div class="quick-action-icon">
+                            <i class="bi bi-box-seam-fill"></i>
+                        </div>
+                        <div class="quick-action-text">
+                            <strong>Nhập kho</strong>
+                            <small>Tạo phiếu nhập kho</small>
+                        </div>
+                    </a>
+
+                    <a href="/Report" class="quick-action-item">
+                        <div class="quick-action-icon">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <div class="quick-action-text">
+                            <strong>Xem báo cáo</strong>
+                            <small>Thống kê doanh thu</small>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

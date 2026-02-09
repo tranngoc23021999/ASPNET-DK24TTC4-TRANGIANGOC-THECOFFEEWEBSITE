@@ -1,0 +1,168 @@
+@model CoffeSolution.Models.Entities.Store
+@{
+    ViewData["Title"] = "Chi tiết cửa hàng";
+}
+
+<div class="page-header">
+    <h1>Chi tiết cửa hàng</h1>
+    <div class="page-actions">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Chỉnh sửa
+        </a>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-shop text-coffee-medium"></i> @Model.Name
+                </h5>
+                @if (Model.IsActive)
+                {
+                    <span class="badge badge-success">Hoạt động</span>
+                }
+                else
+                {
+                    <span class="badge badge-secondary">Ngừng hoạt động</span>
+                }
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Mã cửa hàng</label>
+                        <div class="fw-semibold">@(Model.Code ?? "-")</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Chủ sở hữu</label>
+                        <div class="fw-semibold">@(Model.Owner?.FullName ?? "-")</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Địa chỉ</label>
+                    <div>@(Model.Address ?? "Chưa cập nhật")</div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Số điện thoại</label>
+                        <div>
+                            @if (!string.IsNullOrEmpty(Model.Phone))
+                            {
+                                <a href="tel:@Model.Phone">@Model.Phone</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Chưa cập nhật</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Email</label>
+                        <div>
+                            @if (!string.IsNullOrEmpty(Model.Email))
+                            {
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Chưa cập nhật</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <hr />
+
+                <div class="row text-muted small">
+                    <div class="col-md-6">
+                        <strong>Ngày tạo:</strong> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff List -->
+        @if (Model.UserStores != null && Model.UserStores.Any())
+        {
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-people"></i> Nhân viên (@Model.UserStores.Count)</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var us in Model.UserStores)
+                                {
+                                    <tr>
+                                        <td>@us.User?.FullName</td>
+                                        <td>@us.User?.Email</td>
+                                        <td>
+                                            @if (us.User?.IsActive == true)
+                                            {
+                                                <span class="badge badge-success">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-secondary">Ngừng</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Thao tác</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Chỉnh sửa thông tin
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" onclick="deleteStore(@Model.Id)">
+                        <i class="bi bi-trash"></i> Xóa cửa hàng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function deleteStore(id) {
+            if (confirm('Bạn có chắc muốn xóa cửa hàng này? Hành động này không thể hoàn tác.')) {
+                fetch(`/Store/Delete/${id}`, { 
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(r => r.ok ? window.location.href = '/Store' : alert('Lỗi: Không thể xóa cửa hàng này (Có thể đang có dữ liệu liên quan)'));
+            }
+        }
+    </script>
+}

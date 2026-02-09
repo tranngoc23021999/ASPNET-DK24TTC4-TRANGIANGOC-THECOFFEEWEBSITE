@@ -1,0 +1,154 @@
+@model IEnumerable<CoffeSolution.Models.Entities.Order>
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+}
+
+<div class="page-header">
+    <h1>Quản lý đơn hàng</h1>
+    <div class="page-actions">
+        <a href="/POS" class="btn btn-primary">
+            <i class="bi bi-cart-plus"></i> Tạo đơn POS
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Mã đơn..." />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Pending">Chờ xử lý</option>
+                    <option value="Completed">Hoàn thành</option>
+                    <option value="Cancelled">Đã hủy</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="fromDate" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="toDate" class="form-control" />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-grow-1">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="window.location.href='/Order'">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Thời gian</th>
+                        <th>Thanh toán</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var order in Model)
+                        {
+                            <tr>
+                                <td><strong>@order.OrderCode</strong></td>
+                                <td>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @switch (order.PaymentMethod)
+                                    {
+                                        case "Cash":
+                                            <span class="badge badge-secondary">Tiền mặt</span>
+                                            break;
+                                        case "Card":
+                                            <span class="badge badge-info">Thẻ</span>
+                                            break;
+                                        case "Transfer":
+                                            <span class="badge badge-primary">Chuyển khoản</span>
+                                            break;
+                                        default:
+                                            <span class="badge badge-secondary">@order.PaymentMethod</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-mono">@order.TotalAmount.ToString("N0")đ</td>
+                                <td>
+                                    @switch (order.Status)
+                                    {
+                                        case "Pending":
+                                            <span class="badge badge-warning">Chờ xử lý</span>
+                                            break;
+                                        case "Completed":
+                                            <span class="badge badge-success">Hoàn thành</span>
+                                            break;
+                                        case "Cancelled":
+                                            <span class="badge badge-danger">Đã hủy</span>
+                                            break;
+                                        default:
+                                            <span class="badge badge-secondary">@order.Status</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-outline-info">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-primary" onclick="printOrder(@order.Id)">
+                                            <i class="bi bi-printer"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-receipt" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-2">Chưa có đơn hàng nào</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (Model != null && Model.Any())
+    {
+        <div class="card-footer">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span class="text-muted">Hiển thị @Model.Count() đơn hàng</span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <strong class="text-mono">Tổng: @Model.Sum(o => o.TotalAmount).ToString("N0")đ</strong>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function printOrder(id) {
+            window.open(`/Order/Print/${id}`, '_blank');
+        }
+    </script>
+}

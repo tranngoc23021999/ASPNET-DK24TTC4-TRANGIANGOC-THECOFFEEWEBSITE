@@ -5,6 +5,7 @@ using CoffeSolution.Models.Entities;
 using CoffeSolution.Services;
 using CoffeSolution.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace CoffeSolution.Controllers;
@@ -91,19 +92,44 @@ public class StoreController : BaseController
     }
 
     [Permission(_menuId, ActionCode.Create)]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        var isAdministrator = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
+        ViewBag.IsAdministrator = isAdministrator;
+        
+        if (isAdministrator)
+        {
+            ViewBag.Admins = await GetAdminSelectListAsync();
+        }
+        
         return View(new StoreViewModel());
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [ValidateAntiForgeryToken] 
     [Permission(_menuId, ActionCode.Create)]
     public async Task<IActionResult> Create(StoreViewModel model)
     {
+        var isAdministrator = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
+        
         if (!ModelState.IsValid)
         {
+            ViewBag.IsAdministrator = isAdministrator;
+            if (isAdministrator)
+            {
+                ViewBag.Admins = await GetAdminSelectListAsync();
+            }
             return View(model);
+        }
+
+        int ownerId;
+        if (isAdministrator && model.OwnerId.HasValue)
+        {
+            ownerId = model.OwnerId.Value;
+        }
+        else
+        {
+            ownerId = CurrentUserId!.Value;
         }
 
         var store = new Store
@@ -114,7 +140,7 @@ public class StoreController : BaseController
             Phone = model.Phone,
             Email = model.Email,
             IsActive = model.IsActive,
-            OwnerId = CurrentUserId!.Value,
+            OwnerId = ownerId,
             CreatedAt = DateTime.Now
         };
 
@@ -192,7 +218,14 @@ public class StoreController : BaseController
     [Permission(_menuId, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
-        var store = await _context.Stores.FindAsync(id);
+        var store = await _context.Stores
+            .Include(s => s.Products)
+            .Include(s => s.Orders)
+            .Include(s => s.UserStores)
+            .Include(s => s.WarehouseReceipts)
+            .Include(s => s.Suppliers)
+            .FirstOrDefaultAsync(s => s.Id == id); // Need to include related items to check count
+
         if (store == null) return NotFound();
 
         // Kiểm tra quyền xóa
@@ -202,10 +235,71 @@ public class StoreController : BaseController
             return RedirectToAction("AccessDenied", "Auth");
         }
 
+        // Check dependencies
+        if (store.Products.Any())
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa cửa hàng đang có sản phẩm!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (store.Orders.Any())
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa cửa hàng đã có đơn hàng!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (store.UserStores.Any())
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa cửa hàng đang có nhân viên!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (store.WarehouseReceipts.Any())
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa cửa hàng đã có phiếu nhập kho!";
+            return RedirectToAction(nameof(Index));
+        }
+        
+        if (store.Suppliers.Any())
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa cửa hàng đang có nhà cung cấp!";
+            return RedirectToAction(nameof(Index));
+        }
+
         _context.Stores.Remove(store);
         await _context.SaveChangesAsync();
 
         TempData[TempDataKey.Success] = "Xóa cửa hàng thành công!";
         return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Lấy danh sách Admin users (không phải Administrator) để gắn làm Owner
+    /// </summary>
+    private async Task<List<SelectListItem>> GetAdminSelectListAsync()
+    {
+        // Lấy role "Admin" (không phải Administrator)
+        var adminRole = await _context.Roles
+            .FirstOrDefaultAsync(r => r.Name == "Admin");
+
+        if (adminRole == null)
+        {
+            return new List<SelectListItem>();
+        }
+
+        // Lấy tất cả users có role Admin
+        var adminUsers = await _context.UserRoles
+            .Where(ur => ur.RoleId == adminRole.Id)
+            .Select(ur => ur.User)
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.FullName)
+            .Select(u => new SelectListItem
+            {
+                Value = u.Id.ToString(),
+                Text = $"{u.FullName} ({u.Username})"
+            })
+            .ToListAsync();
+
+        return adminUsers;
     }
 }

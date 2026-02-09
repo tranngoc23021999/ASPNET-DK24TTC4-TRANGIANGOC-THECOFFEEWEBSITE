@@ -22,6 +22,53 @@ namespace CoffeSolution.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("CoffeSolution.Models.Entities.Customer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Customers");
+                });
+
             modelBuilder.Entity("CoffeSolution.Models.Entities.Menu", b =>
                 {
                     b.Property<int>("Id")
@@ -192,6 +239,9 @@ namespace CoffeSolution.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -199,6 +249,9 @@ namespace CoffeSolution.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystem")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -212,7 +265,7 @@ namespace CoffeSolution.Migrations
                     b.Property<int>("StockQuantity")
                         .HasColumnType("int");
 
-                    b.Property<int>("StoreId")
+                    b.Property<int?>("StoreId")
                         .HasColumnType("int");
 
                     b.Property<string>("Unit")
@@ -343,10 +396,16 @@ namespace CoffeSolution.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystem")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -356,7 +415,12 @@ namespace CoffeSolution.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
 
                     b.ToTable("Suppliers");
                 });
@@ -527,6 +591,21 @@ namespace CoffeSolution.Migrations
                     b.ToTable("WarehouseReceiptDetails");
                 });
 
+            modelBuilder.Entity("CoffeSolution.Models.Entities.Customer", b =>
+                {
+                    b.HasOne("CoffeSolution.Models.Entities.Store", "Store")
+                        .WithMany("Customers")
+                        .HasForeignKey("StoreId");
+
+                    b.HasOne("CoffeSolution.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Store");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CoffeSolution.Models.Entities.Menu", b =>
                 {
                     b.HasOne("CoffeSolution.Models.Entities.Menu", "Parent")
@@ -590,8 +669,7 @@ namespace CoffeSolution.Migrations
                     b.HasOne("CoffeSolution.Models.Entities.Store", "Store")
                         .WithMany("Products")
                         .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Store");
                 });
@@ -632,6 +710,16 @@ namespace CoffeSolution.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("CoffeSolution.Models.Entities.Supplier", b =>
+                {
+                    b.HasOne("CoffeSolution.Models.Entities.Store", "Store")
+                        .WithMany("Suppliers")
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Store");
                 });
 
             modelBuilder.Entity("CoffeSolution.Models.Entities.User", b =>
@@ -760,9 +848,13 @@ namespace CoffeSolution.Migrations
 
             modelBuilder.Entity("CoffeSolution.Models.Entities.Store", b =>
                 {
+                    b.Navigation("Customers");
+
                     b.Navigation("Orders");
 
                     b.Navigation("Products");
+
+                    b.Navigation("Suppliers");
 
                     b.Navigation("UserStores");
 

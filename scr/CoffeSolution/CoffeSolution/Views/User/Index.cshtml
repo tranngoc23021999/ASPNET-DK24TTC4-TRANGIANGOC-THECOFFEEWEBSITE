@@ -1,0 +1,223 @@
+@model CoffeSolution.ViewModels.UserIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<div class="page-header">
+    <h1>Quản lý người dùng</h1>
+    <div class="page-actions">
+        @if (ViewBag.CanCreate == true)
+        {
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Thêm người dùng
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Tìm theo tên, email, SĐT..." 
+                           value="@Model.SearchTerm" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="roleId" class="form-select">
+                    <option value="">Tất cả vai trò</option>
+                    @if (ViewBag.Roles != null)
+                    {
+                        foreach (var role in ViewBag.Roles)
+                        {
+                            <option value="@role.Value" selected="@(Model.FilterRoleId?.ToString() == role.Value)">
+                                @role.Text
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="storeId" class="form-select">
+                    <option value="">Tất cả cửa hàng</option>
+                    @if (ViewBag.Stores != null)
+                    {
+                        foreach (var store in ViewBag.Stores)
+                        {
+                            <option value="@store.Value">@store.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-grow-1">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+                <a href="/User" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- User List -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Người dùng</th>
+                        <th>Liên hệ</th>
+                        <th>Vai trò</th>
+                        <th>Cửa hàng</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Users.Any())
+                    {
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-sm">
+                                            @user.FullName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">@user.FullName</div>
+                                            <small class="text-muted">@@@user.Username</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>@(user.Email ?? "-")</div>
+                                    <small class="text-muted">@(user.Phone ?? "-")</small>
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">@(user.RoleName ?? "-")</span>
+                                </td>
+                                <td>
+                                    @if (user.StoreNames.Any())
+                                    {
+                                        @foreach (var store in user.StoreNames.Take(2))
+                                        {
+                                            <span class="badge badge-secondary me-1">@store</span>
+                                        }
+                                        @if (user.StoreNames.Count > 2)
+                                        {
+                                            <span class="badge badge-secondary">+@(user.StoreNames.Count - 2)</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge badge-success">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">Ngừng</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@user.Id" 
+                                           class="btn btn-outline-info" title="Chi tiết">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if (ViewBag.CanEdit == true)
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@user.Id" 
+                                               class="btn btn-outline-primary" title="Sửa">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
+                                        @if (ViewBag.CanDelete == true)
+                                        {
+                                            <button type="button" class="btn btn-outline-danger" 
+                                                    onclick="deleteUser(@user.Id)" title="Xóa">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-people" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-2">Chưa có người dùng nào</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination pagination-sm mb-0 justify-content-center">
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="/User?page=@i&search=@Model.SearchTerm&roleId=@Model.FilterRoleId">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+            <div class="text-center mt-2 text-muted small">
+                Hiển thị @Model.Users.Count / @Model.TotalCount người dùng
+            </div>
+        </div>
+    }
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function deleteUser(id) {
+            if (confirm('Bạn có chắc muốn xóa người dùng này?')) {
+                fetch(`/User/Delete/${id}`, { 
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(r => r.ok ? location.reload() : alert('Lỗi khi xóa (Có thể người dùng này đang là Chủ cửa hàng hoặc có dữ liệu liên quan)'));
+            }
+        }
+    </script>
+}
+
+<style>
+    .avatar-sm {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--coffee-medium);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+</style>

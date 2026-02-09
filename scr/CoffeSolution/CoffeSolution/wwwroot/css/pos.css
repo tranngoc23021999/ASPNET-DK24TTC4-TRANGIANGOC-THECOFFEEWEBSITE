@@ -1,0 +1,130 @@
+/**
+ * CoffeSolution - POS Styles
+ * Point of Sale interface for Vue.js app
+ */
+
+/* ========================================
+   POS BODY
+   ======================================== */
+
+.pos-body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background-color: var(--bg-secondary);
+  overflow: hidden;
+}
+
+/* ========================================
+   APP CONTAINER
+   ======================================== */
+
+#app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ========================================
+   LOADING STATE
+   ======================================== */
+
+.pos-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--coffee-dark) 0%, var(--coffee-brown) 100%);
+}
+
+.loading-spinner {
+  margin-bottom: 1.5rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.loading-spinner i {
+  font-size: 4rem;
+  color: var(--caramel);
+  display: block;
+  animation: rotate 2s linear infinite;
+}
+
+.loading-text {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-medium);
+  color: var(--cream-light);
+  margin: 0;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   POS-SPECIFIC UTILITIES
+   ======================================== */
+
+/* 
+  IMPORTANT: These styles provide baseline for the Vue.js app.
+  The actual POS interface will be built using Vue.js components
+  which will have their own scoped styles.
+  
+  This file should remain minimal and only contain:
+  - Loading state styles
+  - Global POS app container
+  - Any global utilities needed by Vue components
+*/
+
+/* Reset for POS app */
+.pos-body * {
+  box-sizing: border-box;
+}
+
+/* Prevent text selection in POS (optional, can be removed if needed) */
+.pos-body .no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Full height utility for Vue components */
+.pos-full-height {
+  height: 100vh;
+}
+
+/* Print styles for receipts */
+@media print {
+  .pos-body {
+    background: white;
+  }
+  
+  /* Hide everything except receipt */
+  #app > *:not(.receipt) {
+    display: none !important;
+  }
+}

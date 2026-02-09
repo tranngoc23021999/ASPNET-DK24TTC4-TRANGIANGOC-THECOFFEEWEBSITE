@@ -26,7 +26,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderDetail> OrderDetails => Set<OrderDetail>();
-    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<Supplier> Suppliers { get; set; }
+    public DbSet<Customer> Customers { get; set; }
     public DbSet<WarehouseReceipt> WarehouseReceipts => Set<WarehouseReceipt>();
     public DbSet<WarehouseReceiptDetail> WarehouseReceiptDetails => Set<WarehouseReceiptDetail>();
 
@@ -142,6 +143,14 @@ public class ApplicationDbContext : DbContext
             .HasOne(p => p.Store)
             .WithMany(s => s.Products)
             .HasForeignKey(p => p.StoreId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Supplier>()
+            .HasOne(s => s.Store)
+            .WithMany(st => st.Suppliers)
+            .HasForeignKey(s => s.StoreId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
 
         // ===============================

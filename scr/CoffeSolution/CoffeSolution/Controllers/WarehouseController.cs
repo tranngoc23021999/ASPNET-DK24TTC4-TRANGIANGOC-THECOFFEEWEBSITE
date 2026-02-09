@@ -153,6 +153,21 @@ public class WarehouseController : BaseController
 
         if (receipt == null) return NotFound();
 
+        // Kiểm tra tồn kho trước khi hoàn lại
+        // Nếu xóa phiếu nhập -> Tồn kho giảm -> Nếu tồn kho < lượng nhập -> Âm kho -> Chặn
+        foreach (var detail in receipt.Details)
+        {
+            var product = await _context.Products.FindAsync(detail.ProductId);
+            if (product != null)
+            {
+                if (product.StockQuantity < detail.Quantity)
+                {
+                    TempData[TempDataKey.Error] = $"Không thể xóa phiếu nhập! Sản phẩm '{product.Name}' đã được bán/xuất, không đủ tồn kho để hoàn tác.";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+        }
+
         // Hoàn lại tồn kho
         foreach (var detail in receipt.Details)
         {
@@ -175,12 +190,40 @@ public class WarehouseController : BaseController
     [HttpGet]
     public async Task<IActionResult> GetProducts(int storeId)
     {
+        var store = await _context.Stores.FindAsync(storeId);
+        if (store == null) return NotFound();
+
         var products = await _context.Products
-            .Where(p => p.StoreId == storeId && p.IsActive)
+            .Where(p => p.IsActive)
+            .Where(p =>
+                p.StoreId == storeId || // Store specific
+                p.IsSystem || // System Global
+                (p.StoreId == null && p.CreatedById == store.OwnerId) // Owner Global
+            )
             .Select(p => new { p.Id, p.Name, p.Price, p.StockQuantity })
             .ToListAsync();
 
         return Json(products);
+    }
+
+    // API lấy suppliers theo store
+    [HttpGet]
+    public async Task<IActionResult> GetSuppliers(int storeId)
+    {
+        var store = await _context.Stores.FindAsync(storeId);
+        if (store == null) return NotFound();
+
+        var suppliers = await _context.Suppliers
+            .Where(s => s.IsActive)
+            .Where(s =>
+                s.StoreId == storeId || // Store specific
+                s.IsSystem || // System Global
+                (s.StoreId == null && s.CreatedById == store.OwnerId) // Owner Global
+            )
+            .Select(s => new { s.Id, s.Name })
+            .ToListAsync();
+
+        return Json(suppliers);
     }
 
     private async Task<List<int>> GetAllowedStoreIdsAsync()

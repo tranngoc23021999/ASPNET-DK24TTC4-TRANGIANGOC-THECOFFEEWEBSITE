@@ -1,0 +1,309 @@
+/**
+ * CoffeSolution - Responsive Design Utilities
+ * Mobile menu, responsive tables, and other mobile optimizations
+ */
+
+/* ========================================
+   RESPONSIVE TABLES
+   ======================================== */
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: var(--coffee-light);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: var(--coffee-medium);
+}
+
+/* ========================================
+   MOBILE HAMBURGER BUTTON
+   ======================================== */
+
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  transition: all var(--transition-base);
+}
+
+.hamburger-btn:hover {
+  color: var(--coffee-medium);
+}
+
+.hamburger-btn:active {
+  transform: scale(0.95);
+}
+
+/* ========================================
+   MOBILE SIDEBAR BEHAVIOR
+   ======================================== */
+
+@media (max-width: 991.98px) {
+  /* Show hamburger button */
+  .hamburger-btn {
+    display: block;
+    order: -1;
+  }
+
+  /* Reorder top header items */
+  .top-header {
+    gap: 1rem;
+  }
+
+  .top-header-right {
+    order: 1;
+  }
+
+  /* Hide sidebar by default on mobile */
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  /* Show sidebar when active */
+  .sidebar.show {
+    transform: translateX(0);
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* Sidebar overlay */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(44, 24, 16, 0.5);
+    z-index: calc(var(--z-fixed) - 1);
+    display: none;
+    transition: opacity var(--transition-base);
+  }
+
+  .sidebar-overlay.show {
+    display: block;
+  }
+
+  /* Main content full width on mobile */
+  .main-content {
+    margin-left: 0;
+  }
+
+  /* Adjust mobile forms */
+  .form-control,
+  .form-select {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* ========================================
+   SMALL MOBILE (< 576px)
+   ======================================== */
+
+@media (max-width: 575.98px) {
+  /* Stack page header items */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .page-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .page-actions .btn {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  /* Mobile cards */
+  .card-stat {
+    margin-bottom: 1rem;
+  }
+
+  /* Mobile table actions */
+  .table td .btn {
+    padding: 0.375rem 0.5rem;
+    font-size: var(--font-size-sm);
+  }
+
+  /* Mobile forms */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  /* Modal adjustments */
+  .modal {
+    width: 95%;
+    max-width: none;
+  }
+}
+
+/* ========================================
+   TABLET (768px - 991px)
+   ======================================== */
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  /* Two column layout for cards */
+  .row .col-sm-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  /* Adjust sidebar width if shown */
+  .sidebar {
+    width: 240px;
+  }
+}
+
+/* ========================================
+   DESKTOP OPTIMIZATIONS (> 1200px)
+   ======================================== */
+
+@media (min-width: 1200px) {
+  /* Larger content max-width for big screens */
+  .content-wrapper {
+    max-width: var(--content-max-width);
+  }
+
+  /* More spacing on large screens */
+  .page-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .card-body {
+    padding: 2rem;
+  }
+}
+
+/* ========================================
+   TOUCH DEVICES
+   ======================================== */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .menu-item a {
+    padding: 1rem 1.25rem;
+  }
+
+  /* Remove hover states on touch devices */
+  .btn:hover,
+  .menu-item a:hover,
+  .table tbody tr:hover {
+    transform: none;
+  }
+
+  /* Larger form controls */
+  .form-control,
+  .form-select {
+    min-height: 44px;
+  }
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
+@media print {
+  /* Hide sidebar and navigation */
+  .sidebar,
+  .top-header,
+  .sidebar-overlay,
+  .hamburger-btn,
+  .page-actions {
+    display: none !important;
+  }
+
+  /* Full width for content */
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .content-wrapper {
+    padding: 0 !important;
+  }
+
+  /* Remove shadows and backgrounds */
+  .card,
+  .table {
+    box-shadow: none !important;
+  }
+
+  /* Ensure good contrast */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Page breaks */
+  .card {
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY ENHANCEMENTS
+   ======================================== */
+
+/* Focus visible styles */
+*:focus-visible {
+  outline: 2px solid var(--coffee-medium);
+  outline-offset: 2px;
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--coffee-dark);
+  color: var(--text-white);
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  z-index: 9999;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

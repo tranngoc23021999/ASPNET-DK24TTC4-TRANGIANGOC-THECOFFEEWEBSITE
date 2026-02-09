@@ -1,0 +1,132 @@
+@model IEnumerable<CoffeSolution.Models.Entities.Supplier>
+@{
+    ViewData["Title"] = "Quản lý nhà cung cấp";
+}
+
+<div class="page-header">
+    <h1>Quản lý nhà cung cấp</h1>
+    <div class="page-actions">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Thêm nhà cung cấp
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Tìm theo tên, email, SĐT..." value="@ViewBag.Search" />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Tên nhà cung cấp</th>
+                        <th>Cửa hàng</th>
+                        <th>Người liên hệ</th>
+                        <th>Điện thoại</th>
+                        <th>Email</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var supplier in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <i class="bi bi-building text-coffee-medium"></i>
+                                    @supplier.Name
+                                </td>
+                                <td>@supplier.ContactPerson</td>
+                                <td>@supplier.Phone</td>
+                                <td>
+                                    @if (supplier.Store != null)
+                                    {
+                                        <span class="badge bg-info">@supplier.Store.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary">Hệ thống</span>
+                                    }
+                                </td>
+                                <td>@supplier.Email</td>
+                                <td>
+                                    @if (supplier.IsActive)
+                                    {
+                                        <span class="badge badge-success">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">Ngừng</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Edit" asp-route-id="@supplier.Id" class="btn btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" onclick="deleteSupplier(@supplier.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-building" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-2">Chưa có nhà cung cấp nào</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function deleteSupplier(id) {
+            if (confirm('Bạn có chắc muốn xóa nhà cung cấp này?')) {
+                fetch(`/Supplier/Delete/${id}`, { 
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Không thể xóa nhà cung cấp này (Có thể đang được sử dụng)');
+                    }
+                })
+                .catch(error => alert('Lỗi hệ thống'));
+            }
+        }
+    </script>
+}

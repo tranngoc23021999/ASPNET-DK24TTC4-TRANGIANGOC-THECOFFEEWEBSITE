@@ -1,0 +1,162 @@
+@model CoffeSolution.ViewModels.EditUserViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa người dùng";
+}
+
+<div class="page-header">
+    <h1>Chỉnh sửa người dùng</h1>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">@Model.FullName</h5>
+                @if (Model.IsActive)
+                {
+                    <span class="badge badge-success">Hoạt động</span>
+                }
+                else
+                {
+                    <span class="badge badge-secondary">Ngừng hoạt động</span>
+                }
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <!-- Account Info -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-person-badge"></i> Tài khoản</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Username" class="form-label">Tên đăng nhập</label>
+                            <input asp-for="Username" class="form-control" readonly />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FullName" class="form-label">
+                                Họ tên <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Contact Info -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-telephone"></i> Liên hệ</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" type="email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Phone" class="form-label">Số điện thoại</label>
+                            <input asp-for="Phone" class="form-control" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Role & Stores -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-shield-check"></i> Phân quyền</h6>
+                    <div class="mb-3">
+                        <label asp-for="RoleId" class="form-label">
+                            Vai trò <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="RoleId" class="form-select">
+                            <option value="">-- Chọn vai trò --</option>
+                            @foreach (var role in Model.AvailableRoles)
+                            {
+                                <option value="@role.Id" selected="@(Model.RoleId == role.Id)">@role.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="RoleId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Cửa hàng <span class="text-danger">*</span>
+                        </label>
+                        <div class="row">
+                            @foreach (var store in Model.AvailableStores)
+                            {
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="StoreIds" value="@store.Id" 
+                                               class="form-check-input" id="store_@store.Id"
+                                               checked="@Model.StoreIds.Contains(store.Id)" />
+                                        <label class="form-check-label" for="store_@store.Id">
+                                            @store.Name
+                                            @if (!string.IsNullOrEmpty(store.Code))
+                                            {
+                                                <small class="text-muted">(@store.Code)</small>
+                                            }
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="StoreIds" class="text-danger"></span>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Status -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsActive" class="form-check-label">Đang hoạt động</label>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Reset Password -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-key"></i> Đặt lại mật khẩu</h6>
+                    <div class="mb-3">
+                        <label asp-for="NewPassword" class="form-label">Mật khẩu mới (để trống nếu không đổi)</label>
+                        <input asp-for="NewPassword" class="form-control" />
+                        <span asp-validation-for="NewPassword" class="text-danger"></span>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Lưu thay đổi
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Lưu ý</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small text-muted mb-0">
+                    <li>Tên đăng nhập không thể thay đổi</li>
+                    <li>Để trống mật khẩu nếu không muốn đổi</li>
+                    <li>Bỏ chọn "Đang hoạt động" sẽ khóa tài khoản</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

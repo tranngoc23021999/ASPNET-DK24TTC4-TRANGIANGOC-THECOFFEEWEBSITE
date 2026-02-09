@@ -35,9 +35,14 @@ public class ProductViewModel
     [Display(Name = "Trạng thái")]
     public bool IsActive { get; set; } = true;
 
-    [Required(ErrorMessage = "Vui lòng chọn cửa hàng")]
     [Display(Name = "Cửa hàng")]
-    public int StoreId { get; set; }
+    public int? StoreId { get; set; }
+
+    [Display(Name = "Ngày tạo")]
+    public DateTime CreatedAt { get; set; }
+
+    public bool IsSystem { get; set; }
+    public int? CreatedById { get; set; }
 }
 
 public class SupplierViewModel
@@ -66,6 +71,15 @@ public class SupplierViewModel
 
     [Display(Name = "Trạng thái")]
     public bool IsActive { get; set; } = true;
+
+    [Display(Name = "Cửa hàng")]
+    public int? StoreId { get; set; }
+
+    [Display(Name = "Ngày tạo")]
+    public DateTime CreatedAt { get; set; }
+
+    public bool IsSystem { get; set; }
+    public int? CreatedById { get; set; }
 }
 
 public class OrderViewModel

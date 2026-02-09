@@ -1,0 +1,38 @@
+@{
+    Layout = "_LayoutPOS";
+    ViewData["Title"] = "Bán hàng";
+}
+
+<div id="app" class="pos-container">
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4 class="fw-normal">Đang tải POS...</h4>
+            <p class="text-muted">Vui lòng chờ trong giây lát</p>
+            <a href="/" class="btn btn-outline-secondary mt-3">
+                <i class="bi bi-arrow-left"></i> Quay về Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="module">
+        // Vue.js app will be initialized here in the future
+        // For now, it stays as a placeholder
+        const { createApp } = Vue
+        
+        createApp({
+            data() {
+                return {
+                    message: 'Hello Vue!'
+                }
+            },
+            mounted() {
+                console.log('POS App Mounted');
+            }
+        }).mount('#app')
+    </script>
+}

@@ -1,0 +1,118 @@
+@{
+    ViewData["Title"] = "Báo cáo doanh thu";
+}
+
+<div class="page-header">
+    <h1>Báo cáo doanh thu</h1>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Từ ngày</label>
+                <input type="date" name="fromDate" value="@(((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd"))" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Đến ngày</label>
+                <input type="date" name="toDate" value="@(((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd"))" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Cửa hàng</label>
+                <select name="storeId" class="form-select" asp-items="ViewBag.Stores">
+                    <option value="">Tất cả cửa hàng</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Xem báo cáo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="card mb-4 bg-light border-0">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-6 border-end">
+                <div class="text-muted small mb-1">Tổng đơn hàng</div>
+                <h3 class="fw-bold mb-0">@ViewBag.TotalOrders</h3>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small mb-1">Tổng doanh thu</div>
+                <h3 class="fw-bold text-success mb-0">@(((decimal)ViewBag.TotalRevenue).ToString("N0"))đ</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Daily Sales -->
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Doanh thu theo ngày</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th class="text-center">Số đơn</th>
+                                <th class="text-end">Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.DailySales != null)
+                            {
+                                foreach (var item in ViewBag.DailySales)
+                                {
+                                    <tr>
+                                        <td>@item.Date.ToString("dd/MM/yyyy")</td>
+                                        <td class="text-center">@item.OrderCount</td>
+                                        <td class="text-end text-mono fw-bold">@item.Revenue.ToString("N0")đ</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Performance -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Top cửa hàng</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    @if (ViewBag.StoreSales != null)
+                    {
+                        foreach (var item in ViewBag.StoreSales)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">@item.StoreName</div>
+                                    <small class="text-muted">@item.OrderCount đơn</small>
+                                </div>
+                                <span class="badge bg-success rounded-pill">@item.Revenue.ToString("N0")đ</span>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

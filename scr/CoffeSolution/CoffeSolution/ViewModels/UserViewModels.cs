@@ -60,7 +60,9 @@ public class CreateUserViewModel
     [Display(Name = "Vai trò")]
     public int RoleId { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng chọn ít nhất 1 cửa hàng")]
+    /// <summary>
+    /// Cửa hàng - Bắt buộc cho Leader/Staff, không bắt buộc cho Admin
+    /// </summary>
     [Display(Name = "Cửa hàng")]
     public List<int> StoreIds { get; set; } = new();
 
@@ -229,6 +231,20 @@ public class AdminFilterItem
     public int AdminId { get; set; }
     public string AdminName { get; set; } = null!;
     public int StoreCount { get; set; }
+}
+
+#endregion
+
+#region Store Selector ViewComponent ViewModel
+
+/// <summary>
+/// ViewModel cho StoreSelectorViewComponent
+/// </summary>
+public class StoreSelectorViewModel
+{
+    public List<StoreOptionItem> Stores { get; set; } = new();
+    public int? CurrentStoreId { get; set; }
+    public string CurrentStoreName { get; set; } = "Chọn cửa hàng";
 }
 
 #endregion

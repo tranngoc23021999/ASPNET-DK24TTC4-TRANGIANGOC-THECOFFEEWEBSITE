@@ -205,12 +205,15 @@ public class UserController : BaseController
             {
                 ModelState.AddModelError("RoleId", "Bạn không có quyền gán vai trò này");
             }
-            // Validate stores
-            else if (!model.StoreIds.Any())
+            // Validate stores - chỉ bắt buộc cho role không phải Admin
+            var selectedRole = await _context.Roles.FindAsync(model.RoleId);
+            var isAdminRole = selectedRole?.Name == "Admin";
+            
+            if (!isAdminRole && !model.StoreIds.Any())
             {
-                ModelState.AddModelError("StoreIds", "Vui lòng chọn ít nhất 1 cửa hàng");
+                ModelState.AddModelError("StoreIds", "Vui lòng chọn ít nhất 1 cửa hàng cho vai trò này");
             }
-            else if (!await CanAssignStoresAsync(currentUser, isAdministrator, model.StoreIds))
+            else if (model.StoreIds.Any() && !await CanAssignStoresAsync(currentUser, isAdministrator, model.StoreIds))
             {
                 ModelState.AddModelError("StoreIds", "Bạn không có quyền gán cửa hàng này");
             }
@@ -347,11 +350,15 @@ public class UserController : BaseController
             {
                 ModelState.AddModelError("RoleId", "Bạn không có quyền gán vai trò này");
             }
-            else if (!model.StoreIds.Any())
+            // Validate stores - chỉ bắt buộc cho role không phải Admin
+            var selectedRole = await _context.Roles.FindAsync(model.RoleId);
+            var isAdminRole = selectedRole?.Name == "Admin";
+            
+            if (!isAdminRole && !model.StoreIds.Any())
             {
-                ModelState.AddModelError("StoreIds", "Vui lòng chọn ít nhất 1 cửa hàng");
+                ModelState.AddModelError("StoreIds", "Vui lòng chọn ít nhất 1 cửa hàng cho vai trò này");
             }
-            else if (!await CanAssignStoresAsync(currentUser, isAdministrator, model.StoreIds))
+            else if (model.StoreIds.Any() && !await CanAssignStoresAsync(currentUser, isAdministrator, model.StoreIds))
             {
                 ModelState.AddModelError("StoreIds", "Bạn không có quyền gán cửa hàng này");
             }
@@ -448,6 +455,29 @@ public class UserController : BaseController
             return RedirectToAction(nameof(Index));
         }
 
+        // Check if user is an Owner
+        var ownsStores = await _context.Stores.AnyAsync(s => s.OwnerId == user.Id);
+        if (ownsStores)
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa tài khoản đang là Chủ sở hữu cửa hàng!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Check history
+        var hasOrders = await _context.Orders.AnyAsync(o => o.StaffId == user.Id);
+        if (hasOrders)
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa tài khoản đã phát sinh đơn hàng!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var hasReceipts = await _context.WarehouseReceipts.AnyAsync(wr => wr.CreatedById == user.Id);
+        if (hasReceipts)
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa tài khoản đã tạo phiếu nhập kho!";
+            return RedirectToAction(nameof(Index));
+        }
+
         _context.UserRoles.RemoveRange(user.UserRoles);
         _context.UserStores.RemoveRange(user.UserStores);
         _context.Users.Remove(user);
@@ -519,13 +549,17 @@ public class UserController : BaseController
             return await _context.Stores.Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync();
         }
 
-        var storeIds = await _context.UserStores
+        // Admin thấy: stores được gán (UserStores) + stores sở hữu (OwnerId)
+        var assignedStoreIds = await _context.UserStores
             .Where(us => us.UserId == currentUser.Id)
             .Select(us => us.StoreId)
             .ToListAsync();
 
         return await _context.Stores
-            .Where(s => storeIds.Contains(s.Id) && s.IsActive)
+            .Where(s => s.IsActive && (
+                assignedStoreIds.Contains(s.Id) ||  // Stores được gán
+                s.OwnerId == currentUser.Id         // Stores sở hữu
+            ))
             .OrderBy(s => s.Name)
             .ToListAsync();
     }
@@ -538,7 +572,8 @@ public class UserController : BaseController
 
     private async Task<bool> CanAssignStoresAsync(User currentUser, bool isAdministrator, List<int> storeIds)
     {
-        if (!storeIds.Any()) return false;
+        // Empty list is allowed for Admin role (validated elsewhere)
+        if (!storeIds.Any()) return true;
         var stores = await GetAssignableStoresAsync(currentUser, isAdministrator);
         var ids = stores.Select(s => s.Id).ToHashSet();
         return storeIds.All(id => ids.Contains(id));
@@ -548,13 +583,24 @@ public class UserController : BaseController
     {
         if (isAdministrator) return true;
         if (targetUser.Id == currentUser.Id) return true;
+        
+        // User do mình tạo
+        if (targetUser.AdminId == currentUser.Id) return true;
 
-        var myStoreIds = await _context.UserStores
+        // Stores được gán + stores sở hữu
+        var myAssignedStoreIds = await _context.UserStores
             .Where(us => us.UserId == currentUser.Id)
             .Select(us => us.StoreId)
             .ToListAsync();
+        
+        var myOwnedStoreIds = await _context.Stores
+            .Where(s => s.OwnerId == currentUser.Id)
+            .Select(s => s.Id)
+            .ToListAsync();
+        
+        var allMyStoreIds = myAssignedStoreIds.Union(myOwnedStoreIds).ToList();
 
-        return targetUser.UserStores.Any(us => myStoreIds.Contains(us.StoreId));
+        return targetUser.UserStores.Any(us => allMyStoreIds.Contains(us.StoreId));
     }
 
     private async Task<bool> CanManageUserAsync(User currentUser, bool isAdministrator, User targetUser)
@@ -565,13 +611,24 @@ public class UserController : BaseController
         var targetRoles = targetUser.UserRoles.Select(ur => ur.Role?.Name ?? "").ToList();
         if (targetRoles.Contains("Administrator") || targetRoles.Contains("Admin"))
             return false;
+        
+        // User do mình tạo -> có quyền manage
+        if (targetUser.AdminId == currentUser.Id) return true;
 
-        var myStoreIds = await _context.UserStores
+        // Stores được gán + stores sở hữu
+        var myAssignedStoreIds = await _context.UserStores
             .Where(us => us.UserId == currentUser.Id)
             .Select(us => us.StoreId)
             .ToListAsync();
+        
+        var myOwnedStoreIds = await _context.Stores
+            .Where(s => s.OwnerId == currentUser.Id)
+            .Select(s => s.Id)
+            .ToListAsync();
+        
+        var allMyStoreIds = myAssignedStoreIds.Union(myOwnedStoreIds).ToList();
 
-        return targetUser.UserStores.Any(us => myStoreIds.Contains(us.StoreId));
+        return targetUser.UserStores.Any(us => allMyStoreIds.Contains(us.StoreId));
     }
 
     private async Task<List<SelectListItem>> GetRoleSelectListAsync(User currentUser, bool isAdministrator)

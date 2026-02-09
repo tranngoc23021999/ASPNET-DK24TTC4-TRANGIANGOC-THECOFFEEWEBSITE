@@ -1,0 +1,200 @@
+@model CoffeSolution.ViewModels.CreateUserViewModel
+@{
+    ViewData["Title"] = "Thêm người dùng mới";
+}
+
+<div class="page-header">
+    <h1>Thêm người dùng mới</h1>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Thông tin người dùng</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <!-- Account Info -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-person-badge"></i> Tài khoản</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Username" class="form-label">
+                                Tên đăng nhập <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Username" class="form-control" placeholder="vd: nhanvien01" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FullName" class="form-label">
+                                Họ tên <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Password" class="form-label">
+                                Mật khẩu <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label">
+                                Xác nhận mật khẩu <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Contact Info -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-telephone"></i> Liên hệ</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="email@example.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Phone" class="form-label">Số điện thoại</label>
+                            <input asp-for="Phone" class="form-control" placeholder="0912345678" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Role & Stores -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-shield-check"></i> Phân quyền</h6>
+                    <div class="mb-3">
+                        <label asp-for="RoleId" class="form-label">
+                            Vai trò <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="RoleId" class="form-select">
+                            <option value="">-- Chọn vai trò --</option>
+                            @foreach (var role in Model.AvailableRoles)
+                            {
+                                <option value="@role.Id">@role.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="RoleId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3" id="storeSection">
+                        <label class="form-label">
+                            Cửa hàng <span class="store-required text-danger">*</span>
+                        </label>
+                        <div class="alert alert-info small py-2 mb-2" id="storeNote" style="display: none;">
+                            <i class="bi bi-info-circle"></i>
+                            Vai trò <strong>Admin</strong> không bắt buộc chọn cửa hàng. Admin có thể tự tạo cửa hàng sau.
+                        </div>
+                        <div class="row">
+                            @foreach (var store in Model.AvailableStores)
+                            {
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="StoreIds" value="@store.Id" 
+                                               class="form-check-input" id="store_@store.Id" />
+                                        <label class="form-check-label" for="store_@store.Id">
+                                            @store.Name
+                                            @if (!string.IsNullOrEmpty(store.Code))
+                                            {
+                                                <small class="text-muted">(@store.Code)</small>
+                                            }
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        @if (!Model.AvailableStores.Any())
+                        {
+                            <div class="text-muted small">
+                                <i class="bi bi-info-circle"></i> Chưa có cửa hàng nào. 
+                                <span id="noStoreHint">Chọn vai trò Admin để có thể tạo cửa hàng sau.</span>
+                            </div>
+                        }
+                        <span asp-validation-for="StoreIds" class="text-danger"></span>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Options -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input asp-for="MustChangePassword" class="form-check-input" type="checkbox" checked />
+                            <label asp-for="MustChangePassword" class="form-check-label">
+                                Yêu cầu đổi mật khẩu khi đăng nhập lần đầu
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Tạo người dùng
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Hướng dẫn</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small text-muted mb-0">
+                    <li>Tên đăng nhập chỉ chứa chữ, số và dấu gạch dưới</li>
+                    <li>Mật khẩu tối thiểu 6 ký tự</li>
+                    <li>Phải chọn ít nhất 1 cửa hàng</li>
+                    <li>Vai trò quyết định quyền hạn của người dùng</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('RoleId');
+            const storeNote = document.getElementById('storeNote');
+            const storeRequired = document.querySelector('.store-required');
+            
+            function updateStoreRequirement() {
+                const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+                const isAdmin = selectedOption && selectedOption.text === 'Admin';
+                
+                if (storeNote) {
+                    storeNote.style.display = isAdmin ? 'block' : 'none';
+                }
+                if (storeRequired) {
+                    storeRequired.style.display = isAdmin ? 'none' : 'inline';
+                }
+            }
+            
+            if (roleSelect) {
+                roleSelect.addEventListener('change', updateStoreRequirement);
+                updateStoreRequirement();
+            }
+        });
+    </script>
+}

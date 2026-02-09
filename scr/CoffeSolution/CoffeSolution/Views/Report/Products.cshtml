@@ -1,0 +1,102 @@
+@model IEnumerable<CoffeSolution.Models.Entities.Product>
+@{
+    ViewData["Title"] = "Báo cáo sản phẩm & Tồn kho";
+}
+
+<div class="page-header">
+    <h1>Báo cáo sản phẩm & Tồn kho</h1>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <select name="storeId" class="form-select" asp-items="ViewBag.Stores">
+                    <option value="">Tất cả cửa hàng</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Product Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 25%">Sản phẩm</th>
+                        <th style="width: 15%">Danh mục</th>
+                        <th style="width: 20%">Cửa hàng</th>
+                        <th style="width: 15%" class="text-end">Giá bán</th>
+                        <th style="width: 15%" class="text-center">Tồn kho</th>
+                        <th style="width: 10%" class="text-center">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var product in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@product.Name</div>
+                                    <small class="text-muted">@product.Unit</small>
+                                </td>
+                                <td>@product.Category</td>
+                                <td>
+                                    @if(product.Store != null)
+                                    {
+                                        <span class="badge badge-light text-dark border">@product.Store.Name</span>
+                                    }
+                                </td>
+                                <td class="text-end text-mono">@product.Price.ToString("N0")đ</td>
+                                <td class="text-center">
+                                    @if (product.StockQuantity <= 10)
+                                    {
+                                        <span class="badge badge-danger">@product.StockQuantity</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-success">@product.StockQuantity</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (product.IsActive)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-x-circle-fill text-muted"></i>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-cup" style="font-size: 2rem;"></i>
+                                <p class="mt-2">Không tìm thấy dữ liệu</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

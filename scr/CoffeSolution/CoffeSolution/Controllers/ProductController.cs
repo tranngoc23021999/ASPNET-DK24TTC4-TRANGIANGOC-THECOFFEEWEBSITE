@@ -43,13 +43,39 @@ public class ProductController : BaseController
                 .ToListAsync();
 
             // Thêm store mà user sở hữu
-            var ownedStoreIds = await _context.Stores
+            var ownedStores = await _context.Stores
                 .Where(s => s.OwnerId == CurrentUserId)
-                .Select(s => s.Id)
+                .Select(s => new { s.Id, s.OwnerId })
                 .ToListAsync();
 
-            var allowedStoreIds = userStoreIds.Union(ownedStoreIds).ToList();
-            query = query.Where(p => allowedStoreIds.Contains(p.StoreId));
+            var ownedStoreIds = ownedStores.Select(s => s.Id).ToList();
+            var allowedStoreIds = userStoreIds.Union(ownedStoreIds).Cast<int?>().ToList();
+            
+            // Get OwnerIds of the stores this user belongs to (for Owner-Global visibility)
+            // If user is Staff in Store A (Owner X), user should see items CreatedBy X with StoreId=null.
+            var ownerIds = await _context.Stores
+                .Where(s => allowedStoreIds.Contains(s.Id))
+                .Select(s => s.OwnerId)
+                .Distinct()
+                .ToListAsync();
+            
+            // Add user's own Id if they are an owner
+             if (User.IsInRole("Admin")) 
+             {
+                 ownerIds.Add(CurrentUserId!.Value);
+             }
+
+            // Filter logic:
+            // 1. IsSystem == true (Visible to all)
+            // 2. StoreId in AllowedStores (Specific store items)
+            // 3. StoreId == null AND CreatedById in ownerIds (Owner-Global items)
+            // 4. StoreId == null AND CreatedById == CurrentUserId (My own global items)
+            
+            query = query.Where(p => 
+                p.IsSystem == true || 
+                allowedStoreIds.Contains(p.StoreId) ||
+                (p.StoreId == null && p.CreatedById.HasValue && ownerIds.Contains(p.CreatedById.Value))
+            );
         }
 
         if (storeId.HasValue)
@@ -95,6 +121,51 @@ public class ProductController : BaseController
             return View(model);
         }
 
+        // Validate Store Access
+        var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
+        
+        // Setup Product Scoping
+        if (model.StoreId == null)
+        {
+            if (isAdmin)
+            {
+                // Administrator -> System Global
+                model.IsSystem = true;
+            }
+            else
+            {
+                // Check if user is an Owner (Admin role)
+                // Assuming Admin role name is "Admin"
+                var isOwner = User.IsInRole("Admin");
+                if (isOwner)
+                {
+                    // Owner -> Owner Global
+                    model.IsSystem = false;
+                    model.CreatedById = CurrentUserId;
+                }
+                else
+                {
+                    ModelState.AddModelError("StoreId", "Bạn không có quyền tạo sản phẩm toàn cục.");
+                    ViewBag.Stores = await GetStoreSelectListAsync();
+                    ViewBag.Categories = GetCategorySelectList();
+                    return View(model);
+                }
+            }
+        }
+        else
+        {
+             // Store specific - check permission
+             if (!isAdmin)
+             {
+                 var allowedStoreIds = await GetAllowedStoreIdsAsync(_context);
+                 if (!allowedStoreIds.Contains(model.StoreId.Value))
+                 {
+                      ModelState.AddModelError("StoreId", "Bạn không có quyền tạo sản phẩm cho cửa hàng này.");
+                      return View(model);
+                 }
+             }
+        }
+
         var product = new Product
         {
             Name = model.Name,
@@ -106,6 +177,8 @@ public class ProductController : BaseController
             Unit = model.Unit,
             IsActive = model.IsActive,
             StoreId = model.StoreId,
+            IsSystem = model.IsSystem,
+            CreatedById = model.CreatedById ?? CurrentUserId, // Track creator always if possible
             CreatedAt = DateTime.Now
         };
 
@@ -133,12 +206,25 @@ public class ProductController : BaseController
             StockQuantity = product.StockQuantity,
             Unit = product.Unit,
             IsActive = product.IsActive,
-            StoreId = product.StoreId
+            StoreId = product.StoreId,
+            CreatedAt = product.CreatedAt
         };
 
         ViewBag.Stores = await GetStoreSelectListAsync();
         ViewBag.Categories = GetCategorySelectList();
         return View(model);
+    }
+
+    [Permission(_menuId, ActionCode.View)]
+    public async Task<IActionResult> Details(int id)
+    {
+        var product = await _context.Products
+            .Include(p => p.Store)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (product == null) return NotFound();
+
+        return View(product);
     }
 
     [HttpPost]
@@ -179,8 +265,25 @@ public class ProductController : BaseController
     [Permission(_menuId, ActionCode.Delete)]
     public async Task<IActionResult> Delete(int id)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _context.Products
+            .Include(p => p.OrderDetails)
+            .Include(p => p.WarehouseReceiptDetails)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
         if (product == null) return NotFound();
+
+        // Check dependencies
+        if (product.OrderDetails.Any())
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa sản phẩm đã phát sinh đơn hàng!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (product.WarehouseReceiptDetails.Any())
+        {
+            TempData[TempDataKey.Error] = "Không thể xóa sản phẩm đã có phiếu nhập/xuất kho!";
+            return RedirectToAction(nameof(Index));
+        }
 
         _context.Products.Remove(product);
         await _context.SaveChangesAsync();
@@ -197,23 +300,24 @@ public class ProductController : BaseController
 
         if (!isAdmin)
         {
-            var userStoreIds = await _context.UserStores
-                .Where(us => us.UserId == CurrentUserId)
-                .Select(us => us.StoreId)
-                .ToListAsync();
-
-            var ownedStoreIds = await _context.Stores
-                .Where(s => s.OwnerId == CurrentUserId)
-                .Select(s => s.Id)
-                .ToListAsync();
-
-            var allowedStoreIds = userStoreIds.Union(ownedStoreIds).ToList();
+            var allowedStoreIds = await GetAllowedStoreIdsAsync(_context);
             query = query.Where(s => allowedStoreIds.Contains(s.Id));
         }
 
-        return await query
+        var stores = await query
             .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
             .ToListAsync();
+
+        if (isAdmin)
+        {
+            stores.Insert(0, new SelectListItem { Value = "", Text = "-- Hệ thống (Toàn cục) --" });
+        }
+        else if (User.IsInRole("Admin")) // Owner
+        {
+            stores.Insert(0, new SelectListItem { Value = "", Text = "-- Tất cả cửa hàng của tôi --" });
+        }
+
+        return stores;
     }
 
     private List<SelectListItem> GetCategorySelectList()

@@ -46,39 +46,58 @@ public class StoreSelectController : Controller
             return RedirectToLocal(returnUrl);
         }
 
-        // Lấy stores của user
-        var userStores = await _context.UserStores
+        // Lấy stores: assigned (UserStores) + owned (OwnerId)
+        var assignedStores = await _context.UserStores
             .Include(us => us.Store)
             .Where(us => us.UserId == userId && us.Store.IsActive)
-            .OrderBy(us => us.Store.Name)
+            .Select(us => new { Store = us.Store, IsDefault = us.IsDefault })
             .ToListAsync();
+        
+        var ownedStores = await _context.Stores
+            .Where(s => s.OwnerId == userId && s.IsActive)
+            .Select(s => new { Store = s, IsDefault = false })
+            .ToListAsync();
+        
+        // Merge và loại bỏ trùng lặp
+        var allStores = assignedStores
+            .Concat(ownedStores)
+            .GroupBy(x => x.Store.Id)
+            .Select(g => g.First())
+            .OrderBy(x => x.Store.Name)
+            .ToList();
 
-        // Nếu không có store -> Access Denied
-        if (!userStores.Any())
+        // Admin role không có store -> vẫn cho vào để tạo store
+        var isAdmin = await IsAdminRoleAsync(userId.Value);
+        if (!allStores.Any())
         {
+            if (isAdmin)
+            {
+                // Admin chưa có store -> vẫn cho đăng nhập (sẽ tạo store sau)
+                return RedirectToLocal(returnUrl);
+            }
             TempData[TempDataKey.Error] = "Tài khoản chưa được gán vào cửa hàng nào!";
             return RedirectToAction("AccessDenied", "Auth");
         }
 
         // Nếu chỉ có 1 store -> Auto select
-        if (userStores.Count == 1)
+        if (allStores.Count == 1)
         {
-            await SetCurrentStoreAsync(userStores[0].StoreId);
+            await SetCurrentStoreAsync(allStores[0].Store.Id);
             return RedirectToLocal(returnUrl);
         }
 
         // Nhiều stores -> Hiển thị màn hình chọn
         var viewModel = new SelectStoreViewModel
         {
-            Stores = userStores.Select(us => new StoreOptionItem
+            Stores = allStores.Select(x => new StoreOptionItem
             {
-                Id = us.Store.Id,
-                Name = us.Store.Name,
-                Code = us.Store.Code,
-                Address = us.Store.Address,
-                IsDefault = us.IsDefault
+                Id = x.Store.Id,
+                Name = x.Store.Name,
+                Code = x.Store.Code,
+                Address = x.Store.Address,
+                IsDefault = x.IsDefault
             }).ToList(),
-            SelectedStoreId = userStores.FirstOrDefault(us => us.IsDefault)?.StoreId,
+            SelectedStoreId = allStores.FirstOrDefault(x => x.IsDefault)?.Store.Id,
             ReturnUrl = returnUrl
         };
 
@@ -95,9 +114,15 @@ public class StoreSelectController : Controller
         var userId = _authService.GetCurrentUserId();
         if (userId == null) return RedirectToAction("Login", "Auth");
 
-        // Validate store thuộc về user
+        // Validate store thuộc về user (assigned hoặc owned)
         var hasAccess = await _context.UserStores
             .AnyAsync(us => us.UserId == userId && us.StoreId == storeId);
+        
+        if (!hasAccess)
+        {
+            hasAccess = await _context.Stores
+                .AnyAsync(s => s.Id == storeId && s.OwnerId == userId);
+        }
 
         if (!hasAccess)
         {
@@ -132,9 +157,15 @@ public class StoreSelectController : Controller
             return Json(new { success = true });
         }
 
-        // Validate store access
+        // Validate store access (assigned hoặc owned)
         var hasAccess = await _context.UserStores
             .AnyAsync(us => us.UserId == userId && us.StoreId == storeId);
+        
+        if (!hasAccess)
+        {
+            hasAccess = await _context.Stores
+                .AnyAsync(s => s.Id == storeId && s.OwnerId == userId);
+        }
 
         if (!hasAccess)
         {
@@ -206,7 +237,8 @@ public class StoreSelectController : Controller
         var userId = _authService.GetCurrentUserId();
         if (userId == null) return Json(new { success = false });
 
-        var stores = await _context.UserStores
+        // Assigned stores
+        var assignedStores = await _context.UserStores
             .Include(us => us.Store)
             .Where(us => us.UserId == userId && us.Store.IsActive)
             .Select(us => new
@@ -217,6 +249,25 @@ public class StoreSelectController : Controller
                 isDefault = us.IsDefault
             })
             .ToListAsync();
+        
+        // Owned stores
+        var ownedStores = await _context.Stores
+            .Where(s => s.OwnerId == userId && s.IsActive)
+            .Select(s => new
+            {
+                id = s.Id,
+                name = s.Name,
+                code = s.Code,
+                isDefault = false
+            })
+            .ToListAsync();
+        
+        // Merge và loại bỏ trùng lặp
+        var stores = assignedStores
+            .Concat(ownedStores)
+            .GroupBy(x => x.id)
+            .Select(g => g.First())
+            .ToList();
 
         var currentStoreId = HttpContext.Session.GetInt32("CurrentStoreId");
 

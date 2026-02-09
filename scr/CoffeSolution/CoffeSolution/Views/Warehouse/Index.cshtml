@@ -1,0 +1,118 @@
+@model IEnumerable<CoffeSolution.Models.Entities.WarehouseReceipt>
+@{
+    ViewData["Title"] = "Quản lý kho";
+}
+
+<div class="page-header">
+    <h1>Quản lý kho</h1>
+    <div class="page-actions">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Tạo phiếu nhập
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Từ ngày</label>
+                <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Đến ngày</label>
+                <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tìm kiếm</label>
+                <input type="text" name="search" class="form-control" placeholder="Mã phiếu..." />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã phiếu</th>
+                        <th>Ngày tạo</th>
+                        <th>Nhà cung cấp</th>
+                        <th>Tổng tiền</th>
+                        <th>Ghi chú</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var receipt in Model)
+                        {
+                            <tr>
+                                <td><strong>@receipt.ReceiptCode</strong></td>
+                                <td>@receipt.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @if (receipt.Supplier != null)
+                                    {
+                                        <i class="bi bi-building text-coffee-medium"></i>
+                                        @receipt.Supplier.Name
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="text-mono">@receipt.TotalAmount.ToString("N0")đ</td>
+                                <td>@receipt.Note</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@receipt.Id" class="btn btn-outline-info">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" onclick="deleteReceipt(@receipt.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-box-seam" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-2">Chưa có phiếu kho nào</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function deleteReceipt(id) {
+            if (confirm('Bạn có chắc muốn xóa phiếu kho này?')) {
+                fetch(`/Warehouse/Delete/${id}`, { 
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(r => r.ok ? location.reload() : alert('Lỗi khi xóa (Có thể hàng đã bán hết, không đủ tồn kho để hoàn tác)'));
+            }
+        }
+    </script>
+}

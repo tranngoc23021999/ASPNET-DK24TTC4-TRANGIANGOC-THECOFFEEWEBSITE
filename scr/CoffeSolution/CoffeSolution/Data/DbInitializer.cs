@@ -66,7 +66,6 @@ public static class DbInitializer
     {
         if (await context.Menus.AnyAsync())
         {
-            logger.LogInformation("Menus already seeded.");
             return;
         }
 
@@ -89,7 +88,6 @@ public static class DbInitializer
 
         context.Menus.AddRange(menus);
         await context.SaveChangesAsync();
-        logger.LogInformation("Seeded {Count} menus.", menus.Count);
     }
 
     /// <summary>
@@ -170,8 +168,8 @@ public static class DbInitializer
             }
         }
 
-        // Admin (Chủ cửa hàng): Full access trừ USER, ROLE, SETTING
-        var adminExcludeMenus = new[] { "USER", "ROLE", "SETTING" };
+        // Admin (Chủ cửa hàng): Full access trừ ROLE, SETTING
+        var adminExcludeMenus = new[] { "ROLE", "SETTING" };
         foreach (var menu in menus.Where(m => !adminExcludeMenus.Contains(m.Code)))
         {
             foreach (var action in menu.MenuActions)
@@ -257,37 +255,42 @@ public static class DbInitializer
     /// </summary>
     private static async Task SeedAdminUserAsync(ApplicationDbContext context, ILogger logger)
     {
-        if (await context.Users.AnyAsync(u => u.Username == "admin"))
-        {
-            logger.LogInformation("Admin user already exists.");
-            return;
-        }
-
         var adminRoleId = await context.Roles
             .Where(r => r.Name == "Administrator")
             .Select(r => r.Id)
             .FirstAsync();
 
-        var adminUser = new User
+        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Username == "admin");
+        if (adminUser == null)
         {
-            Username = "admin",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
-            FullName = "Administrator",
-            Email = "admin@coffeeshop.com",
-            IsActive = true,
-            CreatedAt = DateTime.Now
-        };
+            adminUser = new User
+            {
+                Username = "admin",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+                FullName = "Administrator",
+                Email = "admin@coffeeshop.com",
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
+            context.Users.Add(adminUser);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded admin user: admin/Admin@123");
+        }
 
-        context.Users.Add(adminUser);
-        await context.SaveChangesAsync();
+        // Ensure Admin has Administrator role
+        var hasRole = await context.UserRoles
+            .AnyAsync(ur => ur.UserId == adminUser.Id && ur.RoleId == adminRoleId);
 
-        // Gắn role Administrator cho user
-        context.UserRoles.Add(new UserRole
+        if (!hasRole)
         {
-            UserId = adminUser.Id,
-            RoleId = adminRoleId
-        });
-        await context.SaveChangesAsync();
+            context.UserRoles.Add(new UserRole
+            {
+                UserId = adminUser.Id,
+                RoleId = adminRoleId
+            });
+            await context.SaveChangesAsync();
+            logger.LogInformation("Assigned Administrator role to admin user.");
+        }
 
         logger.LogInformation("Seeded admin user: admin/Admin@123");
     }

@@ -1,0 +1,262 @@
+@{
+    ViewData["Title"] = "Nhập kho";
+}
+
+<div class="page-header">
+    <h1>Tạo phiếu nhập kho</h1>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<form asp-action="Create" method="post" id="createNotesForm">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Danh sách sản phẩm</h5>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                        <i class="bi bi-plus-lg"></i> Thêm sản phẩm
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="productTable">
+                            <thead>
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th style="width: 150px;">Số lượng</th>
+                                    <th style="width: 150px;">Đơn giá</th>
+                                    <th style="width: 150px;" class="text-end">Thành tiền</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr id="emptyRow">
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để bắt đầu.
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Tổng cộng:</td>
+                                    <td class="text-end fw-bold text-primary" id="totalAmount">0đ</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Ghi chú</label>
+                <textarea name="note" class="form-control" rows="3" placeholder="Ghi chú nhập kho..."></textarea>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông tin phiếu nhập</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Cửa hàng <span class="text-danger">*</span></label>
+                        <select name="storeId" id="storeSelect" class="form-select" asp-items="ViewBag.Stores" required>
+                            <option value="">-- Chọn cửa hàng --</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Nhà cung cấp <span class="text-danger">*</span></label>
+                        <select name="supplierId" class="form-select" required>
+                            <option value="">-- Vui lòng chọn cửa hàng trước --</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ngày nhập</label>
+                        <input type="text" class="form-control" value="@DateTime.Now.ToString("dd/MM/yyyy HH:mm")" disabled />
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-file-earmark-check"></i> Lưu phiếu nhập
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Modal Add Product -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Chọn sản phẩm</label>
+                    <select id="modalProductSelect" class="form-select">
+                        <option value="">-- Vui lòng chọn cửa hàng trước --</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Số lượng</label>
+                        <input type="number" id="modalQuantity" class="form-control" value="1" min="1" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Đơn giá nhập</label>
+                        <input type="number" id="modalPrice" class="form-control" value="0" min="0" step="1000" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="btnAddToTable">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let products = [];
+        let items = [];
+
+        // Load products and suppliers when store changes
+        $('#storeSelect').change(function() {
+            const storeId = $(this).val();
+            const productSelect = $('#modalProductSelect');
+            const supplierSelect = $('select[name="supplierId"]');
+            
+            productSelect.empty().append('<option value="">-- Chọn sản phẩm --</option>');
+            supplierSelect.empty().append('<option value="">-- Chọn nhà cung cấp --</option>');
+            
+            if (storeId) {
+                // Fetch Products
+                fetch(`/Warehouse/GetProducts?storeId=${storeId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        products = data;
+                        data.forEach(p => {
+                            productSelect.append(`<option value="${p.id}" data-price="${p.price}">${p.name}</option>`);
+                        });
+                    });
+
+                // Fetch Suppliers
+                fetch(`/Warehouse/GetSuppliers?storeId=${storeId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        data.forEach(s => {
+                            supplierSelect.append(`<option value="${s.id}">${s.name}</option>`);
+                        });
+                    });
+
+            } else {
+                productSelect.append('<option value="">-- Vui lòng chọn cửa hàng trước --</option>');
+            }
+        });
+
+        // Add item to table
+        $('#btnAddToTable').click(function() {
+            const productId = $('#modalProductSelect').val();
+            const productName = $('#modalProductSelect option:selected').text();
+            const qty = parseInt($('#modalQuantity').val());
+            const price = parseFloat($('#modalPrice').val());
+
+            if (!productId || qty <= 0 || price < 0) {
+                alert('Vui lòng nhập đầy đủ thông tin hợp lệ');
+                return;
+            }
+
+            // Check if exists
+            const existing = items.find(i => i.productId == productId);
+            if (existing) {
+                existing.quantity += qty;
+                existing.unitPrice = price; // Update price check
+            } else {
+                items.push({
+                    productId: parseInt(productId),
+                    productName: productName,
+                    quantity: qty,
+                    unitPrice: price
+                });
+            }
+
+            renderTable();
+            $('#addProductModal').modal('hide');
+            
+            // Reset modal
+            $('#modalProductSelect').val('');
+            $('#modalQuantity').val(1);
+            $('#modalPrice').val(0);
+        });
+
+        // Remove item
+        window.removeItem = function(index) {
+            items.splice(index, 1);
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = $('#productTable tbody');
+            tbody.empty();
+
+            if (items.length === 0) {
+                tbody.append(`
+                    <tr id="emptyRow">
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để bắt đầu.
+                        </td>
+                    </tr>
+                `);
+                $('#totalAmount').text('0đ');
+                return;
+            }
+
+            let total = 0;
+            items.forEach((item, index) => {
+                const amount = item.quantity * item.unitPrice;
+                total += amount;
+
+                tbody.append(`
+                    <tr>
+                        <td>
+                            ${item.productName}
+                            <input type="hidden" name="items[${index}].ProductId" value="${item.productId}" />
+                        </td>
+                        <td>
+                             <input type="hidden" name="items[${index}].Quantity" value="${item.quantity}" />
+                            ${item.quantity}
+                        </td>
+                        <td>
+                            <input type="hidden" name="items[${index}].UnitPrice" value="${item.unitPrice}" />
+                            ${new Intl.NumberFormat('vi-VN').format(item.unitPrice)}đ
+                        </td>
+                        <td class="text-end fw-bold">
+                            ${new Intl.NumberFormat('vi-VN').format(amount)}đ
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-link text-danger" onclick="removeItem(${index})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+
+            $('#totalAmount').text(new Intl.NumberFormat('vi-VN').format(total) + 'đ');
+        }
+    </script>
+}

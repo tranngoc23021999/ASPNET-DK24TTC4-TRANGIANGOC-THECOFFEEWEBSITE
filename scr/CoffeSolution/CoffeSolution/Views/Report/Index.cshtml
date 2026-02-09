@@ -1,0 +1,106 @@
+@{
+    ViewData["Title"] = "Báo cáo tổng quan";
+}
+
+<div class="page-header">
+    <h1>Báo cáo tổng quan</h1>
+    <div class="page-actions">
+        <div class="btn-group">
+            <a asp-action="Sales" class="btn btn-outline-primary">
+                <i class="bi bi-graph-up"></i> Báo cáo doanh thu
+            </a>
+            <a asp-action="Products" class="btn btn-outline-primary">
+                <i class="bi bi-box-seam"></i> Báo cáo sản phẩm
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <!-- Today -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-start border-4 border-primary">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Đơn hàng hôm nay</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <h2 class="mb-0">@ViewBag.TodayOrders</h2>
+                    <i class="bi bi-receipt text-primary fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-start border-4 border-success">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Doanh thu hôm nay</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <h2 class="mb-0 text-success">@(((decimal)ViewBag.TodayRevenue).ToString("N0"))đ</h2>
+                    <i class="bi bi-currency-dollar text-success fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-start border-4 border-info">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Đơn tháng này</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <h2 class="mb-0">@ViewBag.MonthOrders</h2>
+                    <i class="bi bi-calendar-check text-info fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-start border-4 border-warning">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Doanh thu tháng này</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <h2 class="mb-0 text-warning">@(((decimal)ViewBag.MonthRevenue).ToString("N0"))đ</h2>
+                    <i class="bi bi-pie-chart text-warning fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Stats -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <div class="mb-2">
+                    <i class="bi bi-shop fs-1 text-coffee-medium"></i>
+                </div>
+                <h3 class="fw-bold">@ViewBag.TotalStores</h3>
+                <div class="text-muted">Cửa hàng đang hoạt động</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <div class="mb-2">
+                    <i class="bi bi-cup-hot fs-1 text-coffee-light"></i>
+                </div>
+                <h3 class="fw-bold">@ViewBag.TotalProducts</h3>
+                <div class="text-muted">Sản phẩm trong hệ thống</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <div class="mb-2">
+                    <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
+                </div>
+                <h3 class="fw-bold text-danger">@ViewBag.LowStockProducts</h3>
+                <div class="text-muted">Sản phẩm sắp hết hàng</div>
+                <a asp-action="Index" asp-controller="Product" class="btn btn-sm btn-outline-danger mt-3">Kiểm tra ngay</a>
+            </div>
+        </div>
+    </div>
+</div>

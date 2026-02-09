@@ -28,7 +28,7 @@ public class ReportController : BaseController
         await SetPermissionViewBagAsync(_menuId);
 
         var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
-        var allowedStoreIds = isAdmin ? null : await GetAllowedStoreIdsAsync();
+        var allowedStoreIds = isAdmin ? null : await GetAllowedStoreIdsAsync(_context);
 
         // Dashboard data
         var today = DateTime.Today;
@@ -63,7 +63,7 @@ public class ReportController : BaseController
         if (allowedStoreIds != null)
         {
             storesQuery = storesQuery.Where(s => allowedStoreIds.Contains(s.Id));
-            productsQuery = productsQuery.Where(p => allowedStoreIds.Contains(p.StoreId));
+            productsQuery = productsQuery.Where(p => p.StoreId == null || (p.StoreId.HasValue && allowedStoreIds.Contains(p.StoreId.Value)));
         }
 
         ViewBag.TotalStores = await storesQuery.CountAsync();
@@ -89,7 +89,7 @@ public class ReportController : BaseController
 
         if (!isAdmin)
         {
-            var allowedStoreIds = await GetAllowedStoreIdsAsync();
+            var allowedStoreIds = await GetAllowedStoreIdsAsync(_context);
             query = query.Where(o => allowedStoreIds.Contains(o.StoreId));
         }
 
@@ -145,8 +145,8 @@ public class ReportController : BaseController
 
         if (!isAdmin)
         {
-            var allowedStoreIds = await GetAllowedStoreIdsAsync();
-            query = query.Where(p => allowedStoreIds.Contains(p.StoreId));
+            var allowedStoreIds = await GetAllowedStoreIdsAsync(_context);
+            query = query.Where(p => p.StoreId == null || (p.StoreId.HasValue && allowedStoreIds.Contains(p.StoreId.Value)));
         }
 
         if (storeId.HasValue)
@@ -162,20 +162,7 @@ public class ReportController : BaseController
         return View(products);
     }
 
-    private async Task<List<int>> GetAllowedStoreIdsAsync()
-    {
-        var userStoreIds = await _context.UserStores
-            .Where(us => us.UserId == CurrentUserId)
-            .Select(us => us.StoreId)
-            .ToListAsync();
 
-        var ownedStoreIds = await _context.Stores
-            .Where(s => s.OwnerId == CurrentUserId)
-            .Select(s => s.Id)
-            .ToListAsync();
-
-        return userStoreIds.Union(ownedStoreIds).ToList();
-    }
 
     private async Task<List<SelectListItem>> GetStoreSelectListAsync()
     {
@@ -184,7 +171,7 @@ public class ReportController : BaseController
 
         if (!isAdmin)
         {
-            var allowedStoreIds = await GetAllowedStoreIdsAsync();
+            var allowedStoreIds = await GetAllowedStoreIdsAsync(_context);
             query = query.Where(s => allowedStoreIds.Contains(s.Id));
         }
 

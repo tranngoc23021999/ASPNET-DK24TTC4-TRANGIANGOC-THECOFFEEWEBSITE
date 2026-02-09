@@ -1,0 +1,108 @@
+@model CoffeSolution.ViewModels.StoreSelectorViewModel
+
+@* Store Selector Dropdown - Hiển thị khi user có nhiều stores *@
+
+<div class="store-selector dropdown me-3">
+    <button class="btn btn-outline-primary dropdown-toggle d-flex align-items-center" 
+            type="button" 
+            id="storeSelectorDropdown" 
+            data-bs-toggle="dropdown" 
+            aria-expanded="false">
+        <i class="fas fa-store me-2"></i>
+        <span class="store-name">@Model.CurrentStoreName</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="storeSelectorDropdown">
+        <li><h6 class="dropdown-header">Chọn cửa hàng</h6></li>
+        <li><hr class="dropdown-divider"></li>
+        @foreach (var store in Model.Stores)
+        {
+            var isActive = store.Id == Model.CurrentStoreId;
+            <li>
+                <a class="dropdown-item d-flex align-items-center @(isActive ? "active" : "")" 
+                   href="#" 
+                   data-store-id="@store.Id"
+                   onclick="switchStore(@store.Id); return false;">
+                    <i class="fas fa-store me-2 @(isActive ? "" : "text-muted")"></i>
+                    <div>
+                        <div class="fw-medium">@store.Name</div>
+                        @if (!string.IsNullOrEmpty(store.Code))
+                        {
+                            <small class="text-muted">@store.Code</small>
+                        }
+                    </div>
+                    @if (isActive)
+                    {
+                        <i class="fas fa-check ms-auto text-success"></i>
+                    }
+                </a>
+            </li>
+        }
+    </ul>
+</div>
+
+<style>
+    .store-selector .dropdown-toggle {
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        background: white;
+        border-color: #e0e0e0;
+        color: #333;
+    }
+    .store-selector .dropdown-toggle:hover,
+    .store-selector .dropdown-toggle:focus {
+        background: #f8f9fa;
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    .store-selector .dropdown-menu {
+        min-width: 280px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        border: none;
+    }
+    .store-selector .dropdown-item {
+        padding: 10px 16px;
+        border-radius: 6px;
+        margin: 2px 8px;
+        width: calc(100% - 16px);
+    }
+    .store-selector .dropdown-item:hover {
+        background: #f0f0f0;
+    }
+    .store-selector .dropdown-item.active {
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        color: white;
+    }
+    .store-selector .dropdown-item.active .text-muted {
+        color: rgba(255,255,255,0.8) !important;
+    }
+</style>
+
+<script>
+    function switchStore(storeId) {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        
+        fetch('/StoreSelect/Switch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': token || ''
+            },
+            body: 'storeId=' + storeId
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload trang để cập nhật dữ liệu theo store mới
+                window.location.reload();
+            } else {
+                alert(data.message || 'Có lỗi xảy ra khi chuyển cửa hàng');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi chuyển cửa hàng');
+        });
+    }
+</script>

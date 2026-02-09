@@ -1,0 +1,116 @@
+@model CoffeSolution.Models.Entities.WarehouseReceipt
+@{
+    ViewData["Title"] = "Chi tiết phiếu nhập";
+}
+
+<div class="page-header">
+    <h1>Chi tiết phiếu nhập: @Model.ReceiptCode</h1>
+    <div class="page-actions">
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="bi bi-printer"></i> In phiếu
+        </button>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Danh sách sản phẩm</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Details != null)
+                            {
+                                foreach (var item in Model.Details)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@item.Product?.Name</div>
+                                            <small class="text-muted">Mã: @item.Product?.Id</small>
+                                        </td>
+                                        <td class="text-center">@item.Quantity</td>
+                                        <td class="text-end text-mono">@item.UnitPrice.ToString("N0")đ</td>
+                                        <td class="text-end fw-bold text-mono">@item.Amount.ToString("N0")đ</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="3" class="text-end fw-bold">Tổng cộng:</td>
+                                <td class="text-end fw-bold text-primary fs-5">@Model.TotalAmount.ToString("N0")đ</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <div class="card">
+                <div class="card-body">
+                    <label class="fw-bold mb-2">Ghi chú:</label>
+                    <p class="mb-0 text-muted">@Model.Note</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Thông tin chung</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Mã phiếu:</span>
+                        <span class="fw-bold">@Model.ReceiptCode</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Ngày nhập:</span>
+                        <span>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Người tạo:</span>
+                        <span>@Model.CreatedBy?.FullName</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Cửa hàng:</span>
+                        <span>@Model.Store?.Name</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Nhà cung cấp:</span>
+                        <span class="text-primary">@Model.Supplier?.Name</span>
+                    </li>
+                </ul>
+
+                <hr />
+                
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa phiếu nhập này? Tồn kho sẽ được trừ lại.');">
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-trash"></i> Xóa phiếu nhập
+                    </button>
+                    <small class="text-muted text-center d-block mt-2">
+                        * Xóa phiếu sẽ hoàn tác số lượng tồn kho
+                    </small>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

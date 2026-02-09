@@ -1,0 +1,200 @@
+@model CoffeSolution.Models.Entities.Order
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng";
+}
+
+<div class="page-header">
+    <h1>Chi tiết đơn hàng</h1>
+    <div class="page-actions">
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer"></i> In đơn
+        </button>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Thông tin đơn hàng</h5>
+                <span class="badge badge-lg @GetStatusClass(Model.Status)">@GetStatusText(Model.Status)</span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Mã đơn hàng:</label>
+                        <div><strong>@Model.OrderCode</strong></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Thời gian:</label>
+                        <div>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Phương thức thanh toán:</label>
+                        <div>@GetPaymentText(Model.PaymentMethod)</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Trạng thái:</label>
+                        <div>@GetStatusText(Model.Status)</div>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Note))
+                {
+                    <div>
+                        <label class="text-muted small">Ghi chú:</label>
+                        <div>@Model.Note</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Chi tiết sản phẩm</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.OrderDetails != null && Model.OrderDetails.Any())
+                            {
+                                @foreach (var item in Model.OrderDetails)
+                                {
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-cup-hot text-coffee-medium"></i>
+                                            @(item.Product?.Name ?? $"SP #{item.ProductId}")
+                                            @if (!string.IsNullOrEmpty(item.Note))
+                                            {
+                                                <br /><small class="text-muted">@item.Note</small>
+                                            }
+                                        </td>
+                                        <td class="text-center text-mono">@item.Quantity</td>
+                                        <td class="text-end text-mono">@item.UnitPrice.ToString("N0")đ</td>
+                                        <td class="text-end text-mono"><strong>@item.Amount.ToString("N0")đ</strong></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-success">
+                                <th colspan="3" class="text-end">Tổng cộng:</th>
+                                <th class="text-end text-mono">@Model.TotalAmount.ToString("N0")đ</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">Tóm tắt</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Số món:</span>
+                    <strong>@Model.OrderDetails?.Count</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Tổng SL:</span>
+                    <strong>@Model.OrderDetails?.Sum(i => i.Quantity)</strong>
+                </div>
+                <hr />
+                <div class="d-flex justify-content-between">
+                    <span>Tổng tiền:</span>
+                    <strong class="text-mono">@Model.TotalAmount.ToString("N0")đ</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Thao tác</h6>
+            </div>
+            <div class="card-body">
+                @if (Model.Status == "Pending")
+                {
+                    <button type="button" class="btn btn-success w-100 mb-2" onclick="updateStatus(@Model.Id, 'Completed')">
+                        <i class="bi bi-check-circle"></i> Hoàn thành
+                    </button>
+                    <button type="button" class="btn btn-danger w-100" onclick="updateStatus(@Model.Id, 'Cancelled')">
+                        <i class="bi bi-x-circle"></i> Hủy đơn
+                    </button>
+                }
+                else
+                {
+                    <p class="text-muted small text-center mb-0">Đơn hàng đã @GetStatusText(Model.Status).ToLower()</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function updateStatus(orderId, status) {
+            const message = status === 'Completed' ? 'hoàn thành' : 'hủy';
+            if (confirm(`Bạn có chắc muốn ${message} đơn hàng này?`)) {
+                fetch(`/Order/UpdateStatus/${orderId}?status=${status}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                }).then(r => r.ok ? location.reload() : alert('Lỗi khi cập nhật'));
+            }
+        }
+    </script>
+}
+
+@functions {
+    string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "badge-warning",
+            "Completed" => "badge-success",
+            "Cancelled" => "badge-danger",
+            _ => "badge-secondary"
+        };
+    }
+
+    string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "Chờ xử lý",
+            "Completed" => "Hoàn thành",
+            "Cancelled" => "Đã hủy",
+            _ => status
+        };
+    }
+
+    string GetPaymentText(string method)
+    {
+        return method switch
+        {
+            "Cash" => "Tiền mặt",
+            "Card" => "Thẻ",
+            "Transfer" => "Chuyển khoản",
+            _ => method
+        };
+    }
+}

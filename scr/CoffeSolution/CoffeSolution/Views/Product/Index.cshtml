@@ -1,0 +1,226 @@
+@model IEnumerable<CoffeSolution.Models.Entities.Product>
+@{
+    ViewData["Title"] = "Quản lý sản phẩm";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Quản lý sản phẩm</h1>
+    <div class="page-actions">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Thêm sản phẩm
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Tìm kiếm</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Tên sản phẩm..." value="@ViewBag.Search" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Danh mục</label>
+                <select name="category" class="form-select">
+                    <option value="">Tất cả danh mục</option>
+                    <option value="Coffee">Cà phê</option>
+                    <option value="Tea">Trà</option>
+                    <option value="Juice">Sinh tố</option>
+                    <option value="Food">Bánh ngọt</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Trạng thái</label>
+                <select name="status" class="form-select">
+                    <option value="">Tất cả</option>
+                    <option value="active">Đang bán</option>
+                    <option value="inactive">Ngừng bán</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-grow-1">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+                <a href="/Product" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Product List -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Hình ảnh</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Cửa hàng</th>
+                        <th>Danh mục</th>
+                        <th>Giá bán</th>
+                        <th>Tồn kho</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var product in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                    {
+                                        <img src="@product.ImageUrl" alt="@product.Name" class="product-thumbnail" />
+                                    }
+                                    else
+                                    {
+                                        <div class="product-thumbnail-placeholder">
+                                            <i class="bi bi-cup-hot"></i>
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="product-name">@product.Name</div>
+                                    @if (!string.IsNullOrEmpty(product.Description))
+                                    {
+                                        <small class="text-muted">@(product.Description.Length > 50 ? product.Description.Substring(0, 50) + "..." : product.Description)</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (product.Store != null)
+                                    {
+                                        <span class="badge bg-info">@product.Store.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary">Hệ thống</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge badge-secondary">@(product.Category ?? "Chưa phân loại")</span>
+                                </td>
+                                <td class="text-mono">@product.Price.ToString("N0")đ</td>
+                                <td>
+                                    @if (product.StockQuantity > 10)
+                                    {
+                                        <span class="text-success">@product.StockQuantity</span>
+                                    }
+                                    else if (product.StockQuantity > 0)
+                                    {
+                                        <span class="text-warning">@product.StockQuantity</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">Hết hàng</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (product.IsActive)
+                                    {
+                                        <span class="badge badge-success">Đang bán</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">Ngừng bán</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-outline-primary" title="Chỉnh sửa">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-info" title="Chi tiết">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                onclick="deleteProduct(@product.Id)" title="Xóa">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-cup-straw" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-2">Chưa có sản phẩm nào</p>
+                                <a asp-action="Create" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Thêm sản phẩm đầu tiên
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (Model != null && Model.Any())
+    {
+        <div class="card-footer">
+            <span class="text-muted">Hiển thị @Model.Count() sản phẩm</span>
+        </div>
+    }
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function deleteProduct(productId) {
+            if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                fetch(`/Product/Delete/${productId}`, { 
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                         // Try to read error message from response if possible, otherwise generic
+                        alert('Không thể xóa sản phẩm này (Có thể đang được sử dụng)');
+                    }
+                })
+                .catch(error => alert('Lỗi hệ thống'));
+            }
+        }
+    </script>
+}
+
+<style>
+    .product-thumbnail {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: var(--radius-md);
+    }
+    .product-thumbnail-placeholder {
+        width: 60px;
+        height: 60px;
+        background-color: var(--bg-tertiary);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--coffee-light);
+        font-size: 1.5rem;
+    }
+    .product-name {
+        font-weight: var(--font-weight-medium);
+        color: var(--text-primary);
+    }
+</style>

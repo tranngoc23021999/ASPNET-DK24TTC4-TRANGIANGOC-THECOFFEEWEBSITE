@@ -1,0 +1,455 @@
+@{
+    ViewData["Title"] = "CoffeeShop - Phần mềm quản lý quán cà phê";
+    Layout = "_Layout";
+}
+
+<style>
+    /* Landing Page Styles */
+    .landing-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Navigation */
+    .landing-nav {
+        padding: 1.5rem 3rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        background: rgba(26, 26, 46, 0.8);
+    }
+
+    .landing-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .landing-logo i {
+        font-size: 2rem;
+        color: #c8a97e;
+    }
+
+    .nav-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8rem 3rem 4rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(200, 169, 126, 0.15) 0%, transparent 70%);
+        top: 10%;
+        right: -10%;
+        pointer-events: none;
+    }
+
+    .hero-section::after {
+        content: '';
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(79, 172, 254, 0.1) 0%, transparent 70%);
+        bottom: 10%;
+        left: -5%;
+        pointer-events: none;
+    }
+
+    .hero-content {
+        max-width: 700px;
+        text-align: center;
+        z-index: 1;
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: rgba(200, 169, 126, 0.15);
+        border: 1px solid rgba(200, 169, 126, 0.3);
+        border-radius: 50px;
+        font-size: 0.875rem;
+        color: #c8a97e;
+        margin-bottom: 2rem;
+    }
+
+    .hero-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 4rem;
+        font-weight: 700;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #ffffff 0%, #c8a97e 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.8;
+        margin-bottom: 2.5rem;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn-landing-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #c8a97e 0%, #a88a5b 100%);
+        color: #1a1a2e;
+        font-weight: 600;
+        border: none;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(200, 169, 126, 0.3);
+    }
+
+    .btn-landing-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(200, 169, 126, 0.4);
+        color: #1a1a2e;
+    }
+
+    .btn-landing-outline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 2rem;
+        background: transparent;
+        color: #fff;
+        font-weight: 600;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-landing-outline:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: #fff;
+    }
+
+    /* Features Section */
+    .features-section {
+        padding: 6rem 3rem;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    .section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.1rem;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .feature-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(200, 169, 126, 0.3);
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, rgba(200, 169, 126, 0.2) 0%, rgba(200, 169, 126, 0.1) 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .feature-icon i {
+        font-size: 1.5rem;
+        color: #c8a97e;
+    }
+
+    .feature-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .feature-desc {
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.6;
+    }
+
+    /* Stats Section */
+    .stats-section {
+        padding: 4rem 3rem;
+        display: flex;
+        justify-content: center;
+        gap: 4rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 3rem;
+        font-weight: 700;
+        color: #c8a97e;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 0.5rem;
+    }
+
+    /* CTA Section */
+    .cta-section {
+        padding: 6rem 3rem;
+        text-align: center;
+    }
+
+    .cta-box {
+        max-width: 600px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, rgba(200, 169, 126, 0.15) 0%, rgba(200, 169, 126, 0.05) 100%);
+        border: 1px solid rgba(200, 169, 126, 0.2);
+        border-radius: 24px;
+        padding: 3rem;
+    }
+
+    .cta-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .cta-desc {
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 2rem;
+    }
+
+    /* Footer */
+    .landing-footer {
+        padding: 2rem 3rem;
+        text-align: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+
+        .landing-nav {
+            padding: 1rem 1.5rem;
+        }
+
+        .hero-section {
+            padding: 6rem 1.5rem 3rem;
+        }
+
+        .features-section,
+        .cta-section {
+            padding: 4rem 1.5rem;
+        }
+
+        .stats-section {
+            gap: 2rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<div class="landing-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/" class="landing-logo">
+            <i class="bi bi-cup-hot-fill"></i>
+            <span>CoffeeShop</span>
+        </a>
+        <div class="nav-buttons">
+            <a href="/Auth/Login" class="btn-landing-outline">Đăng nhập</a>
+            <a href="/Auth/Register" class="btn-landing-primary">Bắt đầu miễn phí</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="bi bi-star-fill"></i>
+                Giải pháp #1 cho quán cà phê
+            </div>
+            <h1 class="hero-title">Quản lý quán cà phê chuyên nghiệp</h1>
+            <p class="hero-subtitle">
+                Hệ thống quản lý toàn diện giúp bạn kiểm soát đơn hàng, kho hàng, 
+                nhân viên và doanh thu một cách dễ dàng và hiệu quả.
+            </p>
+            <div class="hero-buttons">
+                <a href="/Auth/Register" class="btn-landing-primary">
+                    <i class="bi bi-rocket-takeoff"></i>
+                    Dùng thử miễn phí
+                </a>
+                <a href="#features" class="btn-landing-outline">
+                    <i class="bi bi-play-circle"></i>
+                    Xem tính năng
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="stat-item">
+            <div class="stat-value">500+</div>
+            <div class="stat-label">Quán cà phê tin dùng</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">50K+</div>
+            <div class="stat-label">Đơn hàng mỗi ngày</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">99.9%</div>
+            <div class="stat-label">Uptime đảm bảo</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">24/7</div>
+            <div class="stat-label">Hỗ trợ khách hàng</div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <h2 class="section-title">Tính năng nổi bật</h2>
+            <p class="section-subtitle">Mọi thứ bạn cần để vận hành quán cà phê hiệu quả</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-cart-check"></i>
+                </div>
+                <h3 class="feature-title">Quản lý đơn hàng</h3>
+                <p class="feature-desc">Xử lý đơn hàng nhanh chóng, theo dõi trạng thái realtime và tích hợp thanh toán đa dạng.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <h3 class="feature-title">Quản lý kho</h3>
+                <p class="feature-desc">Kiểm soát tồn kho chính xác, cảnh báo hết hàng và tự động đề xuất nhập thêm nguyên liệu.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3 class="feature-title">Quản lý nhân viên</h3>
+                <p class="feature-desc">Phân quyền linh hoạt, theo dõi ca làm và đánh giá hiệu suất từng nhân viên.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h3 class="feature-title">Báo cáo doanh thu</h3>
+                <p class="feature-desc">Báo cáo chi tiết theo ngày/tuần/tháng với biểu đồ trực quan, giúp đưa ra quyết định kinh doanh.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <h3 class="feature-title">Đa cửa hàng</h3>
+                <p class="feature-desc">Quản lý nhiều chi nhánh từ một nơi, so sánh hiệu suất và đồng bộ dữ liệu tự động.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h3 class="feature-title">Bảo mật cao</h3>
+                <p class="feature-desc">Dữ liệu được mã hóa, backup tự động và tuân thủ các tiêu chuẩn bảo mật quốc tế.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-box">
+            <h2 class="cta-title">Sẵn sàng nâng cấp quán của bạn?</h2>
+            <p class="cta-desc">Đăng ký ngay hôm nay và trải nghiệm 30 ngày dùng thử miễn phí.</p>
+            <a href="/Auth/Register" class="btn-landing-primary">
+                <i class="bi bi-arrow-right-circle"></i>
+                Bắt đầu ngay
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <p>&copy; 2026 CoffeeShop. Được phát triển với <i class="bi bi-heart-fill text-danger"></i> tại Việt Nam.</p>
+    </footer>
+</div>

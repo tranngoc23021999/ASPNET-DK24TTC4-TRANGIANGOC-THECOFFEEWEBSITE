@@ -1,0 +1,84 @@
+@*
+    Pagination Component
+    Usage: @await Html.PartialAsync("_Pagination", new { CurrentPage = 1, TotalPages = 10, RouteAction = "Index" })
+*@
+
+@{
+    var currentPage = (int)(ViewData["CurrentPage"] ?? 1);
+    var totalPages = (int)(ViewData["TotalPages"] ?? 1);
+    var routeAction = ViewData["RouteAction"]?.ToString() ?? "Index";
+    
+    var maxPagesToShow = 5;
+    var startPage = Math.Max(1, currentPage - maxPagesToShow / 2);
+    var endPage = Math.Min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1)
+    {
+        startPage = Math.Max(1, endPage - maxPagesToShow + 1);
+    }
+}
+
+@if (totalPages > 1)
+{
+    <nav aria-label="Pagination">
+        <ul class="pagination">
+            <li class="@(currentPage == 1 ? "disabled" : "")">
+                @if (currentPage > 1)
+                {
+                    <a asp-action="@routeAction" asp-route-page="@(currentPage - 1)">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                }
+                else
+                {
+                    <span><i class="bi bi-chevron-left"></i></span>
+                }
+            </li>
+
+            @if (startPage > 1)
+            {
+                <li><a asp-action="@routeAction" asp-route-page="1">1</a></li>
+                @if (startPage > 2)
+                {
+                    <li class="disabled"><span>...</span></li>
+                }
+            }
+
+            @for (var i = startPage; i <= endPage; i++)
+            {
+                <li class="@(i == currentPage ? "active" : "")">
+                    @if (i == currentPage)
+                    {
+                        <span>@i</span>
+                    }
+                    else
+                    {
+                        <a asp-action="@routeAction" asp-route-page="@i">@i</a>
+                    }
+                </li>
+            }
+
+            @if (endPage < totalPages)
+            {
+                @if (endPage < totalPages - 1)
+                {
+                    <li class="disabled"><span>...</span></li>
+                }
+                <li><a asp-action="@routeAction" asp-route-page="@totalPages">@totalPages</a></li>
+            }
+
+            <li class="@(currentPage == totalPages ? "disabled" : "")">
+                @if (currentPage < totalPages)
+                {
+                    <a asp-action="@routeAction" asp-route-page="@(currentPage + 1)">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                }
+                else
+                {
+                    <span><i class="bi bi-chevron-right"></i></span>
+                }
+            </li>
+        </ul>
+    </nav>
+}

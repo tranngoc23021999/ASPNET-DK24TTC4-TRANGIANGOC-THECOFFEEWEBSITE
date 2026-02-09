@@ -1,0 +1,98 @@
+@model CoffeSolution.Models.Entities.Customer
+@{
+    ViewData["Title"] = Model?.Id > 0 ? "Chỉnh sửa khách hàng" : "Thêm khách hàng";
+    var isEdit = Model?.Id > 0;
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Thông tin khách hàng</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="@(isEdit ? "Edit" : "Create")" method="post">
+                    @if (isEdit) { <input type="hidden" asp-for="Id" /> }
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Code" class="form-label">Mã khách hàng <span class="text-danger">*</span></label>
+                            <input asp-for="Code" class="form-control" placeholder="KH001" />
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Name" class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" placeholder="Nguyễn Văn A" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="StoreId" class="form-label">Phạm vi áp dụng / Cửa hàng</label>
+                        <select asp-for="StoreId" class="form-select" asp-items="@(new SelectList(ViewBag.Stores, "Id", "Name"))">
+                            <option value="">-- Chọn phạm vi --</option>
+                        </select>
+                        <span asp-validation-for="StoreId" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                            <input asp-for="Phone" class="form-control" placeholder="0123 456 789" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="email@example.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Address" class="form-label">Địa chỉ</label>
+                        <textarea asp-for="Address" class="form-control" rows="2" placeholder="Địa chỉ thường trú"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Note" class="form-label">Ghi chú</label>
+                        <textarea asp-for="Note" class="form-control" rows="2" placeholder="Ghi chú khác"></textarea>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> @(isEdit ? "Cập nhật" : "Lưu")
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Hướng dẫn</h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">Nhập đầy đủ thông tin khách hàng để thuận tiện cho việc quản lý đơn hàng và chăm sóc khách hàng.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

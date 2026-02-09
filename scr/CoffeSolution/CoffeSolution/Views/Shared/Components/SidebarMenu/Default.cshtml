@@ -2,8 +2,8 @@
 
 <nav class="sidebar">
     <div class="sidebar-header">
-        <i class="fas fa-coffee"></i>
-        <span>Coffee Shop</span>
+        <i class="bi bi-cup-hot-fill brand-icon"></i>
+        <span class="brand-name">CoffeSolution</span>
     </div>
 
     <ul class="sidebar-menu">
@@ -12,7 +12,7 @@
             var isActive = ViewContext.RouteData.Values["controller"]?.ToString()?.Equals(
                 menu.Code.Replace("_", ""), StringComparison.OrdinalIgnoreCase) == true;
 
-            <li class="@(isActive ? "active" : "")">
+            <li class="menu-item @(isActive ? "active" : "")">
                 <a href="@menu.Url">
                     <i class="@menu.Icon"></i>
                     <span>@menu.Name</span>
@@ -23,10 +23,13 @@
 
     <div class="sidebar-footer">
         <a asp-controller="Auth" asp-action="ChangePassword">
-            <i class="fas fa-key"></i> Đổi mật khẩu
+            <i class="bi bi-key-fill"></i> Đổi mật khẩu
         </a>
         <a asp-controller="Auth" asp-action="Logout">
-            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            <i class="bi bi-box-arrow-right"></i> Đăng xuất
         </a>
     </div>
 </nav>
+
+<!-- Sidebar Overlay for Mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>

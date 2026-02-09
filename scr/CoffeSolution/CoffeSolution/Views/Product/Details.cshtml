@@ -1,0 +1,109 @@
+@model CoffeSolution.Models.Entities.Product
+@{
+    ViewData["Title"] = "Chi tiết sản phẩm";
+}
+
+<div class="page-header">
+    <h1>Chi tiết sản phẩm</h1>
+    <div class="page-actions">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Chỉnh sửa
+        </a>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center p-4">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" alt="@Model.Name" class="img-fluid rounded shadow-sm mb-3" style="max-height: 300px;" />
+                }
+                else
+                {
+                    <div class="bg-light rounded d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 200px; height: 200px;">
+                        <i class="bi bi-cup-hot display-1 text-muted"></i>
+                    </div>
+                }
+                <h3 class="fw-bold">@Model.Name</h3>
+                <span class="badge @(Model.IsActive ? "bg-success" : "bg-secondary") mb-2">
+                    @(Model.IsActive ? "Đang kinh doanh" : "Ngừng kinh doanh")
+                </span>
+                <div>
+                    <span class="badge bg-secondary">@Model.Category</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">Thông tin chi tiết</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <label class="col-sm-3 col-form-label text-muted">Mã sản phẩm</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-plaintext fw-bold">#@Model.Id</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-3 col-form-label text-muted">Giá bán</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-plaintext fs-5 text-primary fw-bold">@Model.Price.ToString("N0")đ</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-3 col-form-label text-muted">Đơn vị tính</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-plaintext">@Model.Unit</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-3 col-form-label text-muted">Tồn kho hiện tại</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-plaintext @(Model.StockQuantity > 0 ? "text-success" : "text-danger") fw-bold">
+                            @Model.StockQuantity
+                        </p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-3 col-form-label text-muted">Thuộc Cửa hàng</label>
+                    <div class="col-sm-9">
+                        @if (Model.Store != null)
+                        {
+                            <span class="badge bg-info text-dark">@Model.Store.Name</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">Hệ thống (Toàn cục)</span>
+                        }
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-3 col-form-label text-muted">Ngày tạo</label>
+                    <div class="col-sm-9">
+                        <p class="form-control-plaintext">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                </div>
+                
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <hr />
+                    <div class="row mb-3">
+                        <label class="col-sm-12 col-form-label text-muted mb-2">Mô tả</label>
+                        <div class="col-sm-12">
+                            <div class="p-3 bg-light rounded">
+                                @Model.Description
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,204 @@
+@model CoffeSolution.ViewModels.ProductViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa sản phẩm";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Chỉnh sửa sản phẩm</h1>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- Edit Form -->
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="StoreId" />
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông tin cơ bản</h5>
+                </div>
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    @if (ViewBag.Stores != null)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="StoreId" class="form-label">Cửa hàng</label>
+                            <select asp-for="StoreId" class="form-select" asp-items="ViewBag.Stores">
+                            </select>
+                            <span asp-validation-for="StoreId" class="text-danger"></span>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">Mô tả</label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Category" class="form-label">Danh mục</label>
+                            <select asp-for="Category" class="form-select">
+                                <option value="">-- Chọn danh mục --</option>
+                                <option value="Coffee">Cà phê</option>
+                                <option value="Tea">Trà</option>
+                                <option value="Juice">Sinh tố</option>
+                                <option value="Food">Bánh ngọt</option>
+                            </select>
+                            <span asp-validation-for="Category" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Unit" class="form-label">Đơn vị tính</label>
+                            <input asp-for="Unit" class="form-control" />
+                            <span asp-validation-for="Unit" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Giá & Kho</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Price" class="form-label">Giá bán <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input asp-for="Price" type="number" class="form-control text-mono" min="0" step="1000" />
+                                <span class="input-group-text">đ</span>
+                            </div>
+                            <span asp-validation-for="Price" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StockQuantity" class="form-label">Tồn kho</label>
+                            <input asp-for="StockQuantity" type="number" class="form-control text-mono" min="0" />
+                            <span asp-validation-for="StockQuantity" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Hình ảnh sản phẩm</h5>
+                </div>
+                <div class="card-body">
+                    <div class="image-preview mb-3" id="imagePreview">
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <img src="@Model.ImageUrl" alt="@Model.Name" style="max-width: 100%; border-radius: 8px;" />
+                        }
+                        else
+                        {
+                            <i class="bi bi-image"></i>
+                            <p>Chưa có hình ảnh</p>
+                        }
+                    </div>
+                    <label asp-for="ImageUrl" class="form-label">URL hình ảnh</label>
+                    <input asp-for="ImageUrl" type="text" class="form-control" placeholder="https://..." />
+                    <span asp-validation-for="ImageUrl" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Trạng thái</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsActive" class="form-check-label">
+                            Sản phẩm đang bán
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Thông tin</h6>
+                </div>
+                <div class="card-body small">
+                    <div class="mb-2">
+                        <strong>Ngày tạo:</strong><br />
+                        @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Cập nhật
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Hủy
+                </a>
+                <button type="button" class="btn btn-outline-danger ms-auto" onclick="deleteProduct(@Model.Id)">
+                    <i class="bi bi-trash"></i> Xóa sản phẩm
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function deleteProduct(productId) {
+            if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                 // Form already exists
+                fetch(`/Product/Delete/${productId}`, { 
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/Product';
+                    } else {
+                        alert('Không thể xóa sản phẩm này (Có thể đang được sử dụng)');
+                    }
+                })
+                .catch(error => alert('Lỗi hệ thống'));
+            }
+        }
+    </script>
+}
+
+<style>
+    .image-preview {
+        min-height: 150px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        border: 2px dashed #dee2e6;
+    }
+    .image-preview i { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+</style>

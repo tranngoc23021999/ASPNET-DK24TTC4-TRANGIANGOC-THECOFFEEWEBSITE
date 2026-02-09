@@ -1,0 +1,285 @@
+/**
+ * CoffeSolution - Base CSS Variables
+ * Coffee-themed design system tokens
+ */
+
+:root {
+  /* ========================================
+     COLOR PALETTE - Coffee Theme
+     ======================================== */
+
+  /* Primary - Espresso Tones */
+  --coffee-dark: #2c1810; /* Espresso - Darkest */
+  --coffee-brown: #4a2c2a; /* Dark Roast */
+  --coffee-medium: #6f4e37; /* Coffee */
+  --coffee-light: #a67b5b; /* Latte */
+
+  /* Accent - Cream Tones */
+  --cream: #f5f0e8; /* Cream */
+  --cream-light: #faf8f5; /* Light Cream */
+  --caramel: #c68642; /* Caramel */
+
+  /* Status Colors */
+  --success: #4caf50;
+  --success-light: #81c784;
+  --warning: #ffc107;
+  --warning-light: #ffd54f;
+  --danger: #e74c3c;
+  --danger-light: #ef5350;
+  --info: #2196f3;
+  --info-light: #64b5f6;
+
+  /* Text Colors */
+  --text-primary: #2c1810;
+  --text-secondary: #6f4e37;
+  --text-muted: #a67b5b;
+  --text-light: #f5f0e8;
+  --text-white: #ffffff;
+
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #faf8f5;
+  --bg-tertiary: #f5f0e8;
+  --bg-dark: #2c1810;
+
+  /* Border Colors */
+  --border-light: #f5f0e8;
+  --border-medium: #e0d5c7;
+  --border-dark: #a67b5b;
+
+  /* ========================================
+     TYPOGRAPHY
+     ======================================== */
+
+  /* Font Families */
+  --font-brand: "Playfair Display", Georgia, serif;
+  --font-heading: "Poppins", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Courier New", monospace;
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem; /* 36px */
+  --font-size-5xl: 3rem; /* 48px */
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ========================================
+     SPACING
+     ======================================== */
+
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 1rem; /* 16px */
+  --spacing-lg: 1.5rem; /* 24px */
+  --spacing-xl: 2rem; /* 32px */
+  --spacing-2xl: 3rem; /* 48px */
+  --spacing-3xl: 4rem; /* 64px */
+
+  /* ========================================
+     LAYOUT
+     ======================================== */
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 60px;
+
+  /* Header */
+  --header-height: 70px;
+
+  /* Content */
+  --content-max-width: 1400px;
+  --content-padding: 1.5rem;
+
+  /* ========================================
+     RESPONSIVE BREAKPOINTS
+     ======================================== */
+
+  --breakpoint-sm: 576px; /* Small devices */
+  --breakpoint-md: 768px; /* Tablets */
+  --breakpoint-lg: 992px; /* Desktops */
+  --breakpoint-xl: 1200px; /* Large desktops */
+  --breakpoint-xxl: 1400px; /* Extra large */
+
+  /* ========================================
+     SHADOWS
+     ======================================== */
+
+  --shadow-sm: 0 1px 2px 0 rgba(44, 24, 16, 0.05);
+  --shadow-md:
+    0 4px 6px -1px rgba(44, 24, 16, 0.1), 0 2px 4px -1px rgba(44, 24, 16, 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(44, 24, 16, 0.1),
+    0 4px 6px -2px rgba(44, 24, 16, 0.05);
+  --shadow-xl:
+    0 20px 25px -5px rgba(44, 24, 16, 0.1),
+    0 10px 10px -5px rgba(44, 24, 16, 0.04);
+
+  /* ========================================
+     BORDER RADIUS
+     ======================================== */
+
+  --radius-sm: 0.25rem; /* 4px */
+  --radius-md: 0.5rem; /* 8px */
+  --radius-lg: 0.75rem; /* 12px */
+  --radius-xl: 1rem; /* 16px */
+  --radius-full: 9999px; /* Fully rounded */
+
+  /* ========================================
+     TRANSITIONS
+     ======================================== */
+
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* ========================================
+     Z-INDEX LAYERS
+     ======================================== */
+
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+}
+
+/* ========================================
+   BASE RESET & DEFAULTS
+   ======================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+
+/* ========================================
+   TYPOGRAPHY UTILITIES
+   ======================================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+h1 {
+  font-size: var(--font-size-4xl);
+}
+
+h2 {
+  font-size: var(--font-size-3xl);
+}
+
+h3 {
+  font-size: var(--font-size-2xl);
+}
+
+h4 {
+  font-size: var(--font-size-xl);
+}
+
+h5 {
+  font-size: var(--font-size-lg);
+}
+
+h6 {
+  font-size: var(--font-size-base);
+}
+
+p {
+  margin-bottom: var(--spacing-md);
+}
+
+.text-brand {
+  font-family: var(--font-brand);
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.text-primary {
+  color: var(--text-primary);
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-muted {
+  color: var(--text-muted);
+}
+.text-light {
+  color: var(--text-light);
+}
+.text-white {
+  color: var(--text-white);
+}
+
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+.bg-secondary {
+  background-color: var(--bg-secondary);
+}
+.bg-coffee {
+  background-color: var(--coffee-medium);
+}
+.bg-cream {
+  background-color: var(--cream);
+}
+
+.fw-normal {
+  font-weight: var(--font-weight-normal);
+}
+.fw-medium {
+  font-weight: var(--font-weight-medium);
+}
+.fw-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+.fw-bold {
+  font-weight: var(--font-weight-bold);
+}

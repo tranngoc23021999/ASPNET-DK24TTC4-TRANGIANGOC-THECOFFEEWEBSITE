@@ -151,6 +151,13 @@ public class OrderController : BaseController
 
         if (order == null) return NotFound();
 
+        // Chỉ cho phép xóa đơn hàng Pending (sai sót khi tạo)
+        if (order.Status != "Pending")
+        {
+            TempData[TempDataKey.Error] = "Chỉ có thể xóa đơn hàng đang chờ xử lý (Pending)!";
+            return RedirectToAction(nameof(Index));
+        }
+
         _context.OrderDetails.RemoveRange(order.OrderDetails);
         _context.Orders.Remove(order);
         await _context.SaveChangesAsync();

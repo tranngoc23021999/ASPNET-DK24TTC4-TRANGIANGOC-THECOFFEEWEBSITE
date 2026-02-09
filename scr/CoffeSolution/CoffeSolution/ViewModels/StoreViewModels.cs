@@ -29,6 +29,12 @@ public class StoreViewModel
 
     [Display(Name = "Trạng thái")]
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Chỉ dùng khi Administrator tạo store cho Admin khác
+    /// </summary>
+    [Display(Name = "Chủ sở hữu")]
+    public int? OwnerId { get; set; }
 }
 
 public class StoreListViewModel
