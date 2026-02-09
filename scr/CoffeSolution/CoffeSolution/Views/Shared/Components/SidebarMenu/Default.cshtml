@@ -1,0 +1,32 @@
+@model IEnumerable<CoffeSolution.Models.Entities.Menu>
+
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <i class="fas fa-coffee"></i>
+        <span>Coffee Shop</span>
+    </div>
+
+    <ul class="sidebar-menu">
+        @foreach (var menu in Model.OrderBy(m => m.Order))
+        {
+            var isActive = ViewContext.RouteData.Values["controller"]?.ToString()?.Equals(
+                menu.Code.Replace("_", ""), StringComparison.OrdinalIgnoreCase) == true;
+
+            <li class="@(isActive ? "active" : "")">
+                <a href="@menu.Url">
+                    <i class="@menu.Icon"></i>
+                    <span>@menu.Name</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    <div class="sidebar-footer">
+        <a asp-controller="Auth" asp-action="ChangePassword">
+            <i class="fas fa-key"></i> Đổi mật khẩu
+        </a>
+        <a asp-controller="Auth" asp-action="Logout">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </a>
+    </div>
+</nav>
