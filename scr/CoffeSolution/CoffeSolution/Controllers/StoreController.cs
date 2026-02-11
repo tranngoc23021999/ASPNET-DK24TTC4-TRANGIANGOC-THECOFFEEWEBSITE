@@ -25,7 +25,7 @@ public class StoreController : BaseController
     }
 
     [Permission(_menuId, ActionCode.View)]
-    public async Task<IActionResult> Index(string? search, int page = 1)
+    public async Task<IActionResult> Index(string? search, string? status, int page = 1)
     {
         await SetPermissionViewBagAsync(_menuId);
 
@@ -39,6 +39,12 @@ public class StoreController : BaseController
         if (!isAdmin)
         {
             query = query.Where(s => s.OwnerId == CurrentUserId);
+        }
+
+        if (!string.IsNullOrEmpty(status))
+        {
+             if (status == "active") query = query.Where(s => s.IsActive);
+             else if (status == "inactive") query = query.Where(s => !s.IsActive);
         }
 
         if (!string.IsNullOrEmpty(search))
@@ -66,6 +72,7 @@ public class StoreController : BaseController
             .ToListAsync();
 
         ViewBag.Search = search;
+        ViewBag.Status = status;
         return View(stores);
     }
 

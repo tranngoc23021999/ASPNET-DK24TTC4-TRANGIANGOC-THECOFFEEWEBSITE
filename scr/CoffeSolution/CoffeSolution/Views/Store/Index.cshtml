@@ -26,8 +26,8 @@
             <div class="col-md-3">
                 <select name="status" class="form-select">
                     <option value="">Tất cả trạng thái</option>
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Ngừng hoạt động</option>
+                    <option value="active" selected="@(ViewBag.Status == "active")">Hoạt động</option>
+                    <option value="inactive" selected="@(ViewBag.Status == "inactive")">Ngừng hoạt động</option>
                 </select>
             </div>
             <div class="col-md-4 d-flex gap-2">

@@ -25,7 +25,7 @@ public class ProductController : BaseController
     }
 
     [Permission(_menuId, ActionCode.View)]
-    public async Task<IActionResult> Index(string? search, int? storeId, int page = 1)
+    public async Task<IActionResult> Index(string? search, int? storeId, string? category, string? status, int page = 1)
     {
         await SetPermissionViewBagAsync(_menuId);
 
@@ -102,6 +102,17 @@ public class ProductController : BaseController
             );
         }
 
+        if (!string.IsNullOrEmpty(category))
+        {
+            query = query.Where(p => p.Category == category);
+        }
+
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (status == "active") query = query.Where(p => p.IsActive);
+            else if (status == "inactive") query = query.Where(p => !p.IsActive);
+        }
+
         var products = await query
             .OrderByDescending(p => p.CreatedAt)
             .Select(p => new ProductViewModel
@@ -129,6 +140,8 @@ public class ProductController : BaseController
 
         ViewBag.Search = search;
         ViewBag.StoreId = storeId;
+        ViewBag.Category = category;
+        ViewBag.Status = status;
         ViewBag.Stores = await GetStoreSelectListAsync();
 
         return View(products);

@@ -124,6 +124,11 @@ public class EmployeeController : BaseController
 
         ViewBag.Roles = await GetRoleSelectListAsync();
         ViewBag.Stores = await GetStoreSelectListAsync(currentUser, isAdministrator);
+        
+        // Pass filter values back to view
+        ViewBag.Search = search;
+        ViewBag.RoleId = roleId;
+        ViewBag.StoreId = storeId;
 
         return View(viewModel);
     }

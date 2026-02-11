@@ -18,22 +18,23 @@
             <div class="col-md-3">
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="Mã đơn..." />
+                    <input type="text" name="search" class="form-control" placeholder="Mã đơn..." value="@ViewBag.Search" />
                 </div>
             </div>
             <div class="col-md-2">
                 <select name="status" class="form-select">
                     <option value="">Tất cả trạng thái</option>
-                    <option value="Pending">Chờ xử lý</option>
-                    <option value="Completed">Hoàn thành</option>
-                    <option value="Cancelled">Đã hủy</option>
+                    <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xử lý</option>
+                    <option value="Processing" selected="@(ViewBag.Status == "Processing")">Đang làm</option>
+                    <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
+                    <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <input type="date" name="fromDate" class="form-control" />
+                <input type="date" name="fromDate" class="form-control" value="@(ViewBag.FromDate != null ? ((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd") : "")" />
             </div>
             <div class="col-md-2">
-                <input type="date" name="toDate" class="form-control" />
+                <input type="date" name="toDate" class="form-control" value="@(ViewBag.ToDate != null ? ((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd") : "")" />
             </div>
             <div class="col-md-3 d-flex gap-2">
                 <button type="submit" class="btn btn-outline-primary flex-grow-1">

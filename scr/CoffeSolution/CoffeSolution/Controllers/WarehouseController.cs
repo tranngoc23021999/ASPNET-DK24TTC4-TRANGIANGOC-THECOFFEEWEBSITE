@@ -24,7 +24,7 @@ public class WarehouseController : BaseController
     }
 
     [Permission(_menuId, ActionCode.View)]
-    public async Task<IActionResult> Index(int? storeId, DateTime? fromDate, DateTime? toDate)
+    public async Task<IActionResult> Index(string? search, int? storeId, DateTime? fromDate, DateTime? toDate)
     {
         await SetPermissionViewBagAsync(_menuId);
 
@@ -50,11 +50,17 @@ public class WarehouseController : BaseController
         if (toDate.HasValue)
             query = query.Where(wr => wr.CreatedAt <= toDate.Value.AddDays(1));
 
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(wr => wr.ReceiptCode.Contains(search) || (wr.Note != null && wr.Note.Contains(search)));
+        }
+
         var receipts = await query
             .OrderByDescending(wr => wr.CreatedAt)
             .Take(100)
             .ToListAsync();
 
+        ViewBag.Search = search;
         ViewBag.StoreId = storeId;
         ViewBag.FromDate = fromDate;
         ViewBag.ToDate = toDate;

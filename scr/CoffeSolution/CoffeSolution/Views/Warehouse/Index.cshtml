@@ -17,15 +17,15 @@
         <form method="get" class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">Từ ngày</label>
-                <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+                <input type="date" name="fromDate" class="form-control" value="@(ViewBag.FromDate != null ? ((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd") : "")" />
             </div>
             <div class="col-md-3">
                 <label class="form-label">Đến ngày</label>
-                <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+                <input type="date" name="toDate" class="form-control" value="@(ViewBag.ToDate != null ? ((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd") : "")" />
             </div>
             <div class="col-md-3">
                 <label class="form-label">Tìm kiếm</label>
-                <input type="text" name="search" class="form-control" placeholder="Mã phiếu..." />
+                <input type="text" name="search" class="form-control" placeholder="Mã phiếu..." value="@ViewBag.Search" />
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-outline-primary w-100">

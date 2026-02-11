@@ -28,18 +28,18 @@
                 <label class="form-label">Danh mục</label>
                 <select name="category" class="form-select">
                     <option value="">Tất cả danh mục</option>
-                    <option value="Coffee">Cà phê</option>
-                    <option value="Tea">Trà</option>
-                    <option value="Juice">Sinh tố</option>
-                    <option value="Food">Bánh ngọt</option>
+                    <option value="Coffee" selected="@(ViewBag.Category == "Coffee")">Cà phê</option>
+                    <option value="Tea" selected="@(ViewBag.Category == "Tea")">Trà</option>
+                    <option value="Juice" selected="@(ViewBag.Category == "Juice")">Sinh tố</option>
+                    <option value="Food" selected="@(ViewBag.Category == "Food")">Bánh ngọt</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Trạng thái</label>
                 <select name="status" class="form-select">
                     <option value="">Tất cả</option>
-                    <option value="active">Đang bán</option>
-                    <option value="inactive">Ngừng bán</option>
+                    <option value="active" selected="@(ViewBag.Status == "active")">Đang bán</option>
+                    <option value="inactive" selected="@(ViewBag.Status == "inactive")">Ngừng bán</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end gap-2">

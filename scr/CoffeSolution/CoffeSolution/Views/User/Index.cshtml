@@ -48,7 +48,7 @@
                     {
                         foreach (var store in ViewBag.Stores)
                         {
-                            <option value="@store.Value">@store.Text</option>
+                            <option value="@store.Value" selected="@(Convert.ToString(ViewBag.StoreId) == store.Value)">@store.Text</option>
                         }
                     }
                 </select>

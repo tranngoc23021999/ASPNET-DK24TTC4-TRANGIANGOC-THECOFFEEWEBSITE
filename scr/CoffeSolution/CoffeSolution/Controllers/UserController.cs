@@ -123,6 +123,8 @@ public class UserController : BaseController
 
         ViewBag.Roles = await GetRoleSelectListAsync(currentUser, isAdministrator);
         ViewBag.Stores = await GetStoreSelectListAsync(currentUser, isAdministrator);
+        ViewBag.StoreId = storeId;
+        ViewBag.RoleId = roleId;
 
         return View(viewModel);
     }
