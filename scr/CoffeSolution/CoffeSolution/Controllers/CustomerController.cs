@@ -27,7 +27,36 @@ public class CustomerController : BaseController
     {
         await SetPermissionViewBagAsync(_menuId);
 
-        var query = _context.Customers.AsQueryable();
+        var query = _context.Customers
+            .Include(c => c.Store)
+            .Include(c => c.User)
+            .AsQueryable();
+
+        var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
+        if (!isAdmin)
+        {
+             // Logic filter:
+             // 1. StoreId in AllowedStores
+             // 2. UserId == CurrentUser (My created global customers)
+             // 3. UserId in [Owners of AllowedStores] (Owner created global customers)
+             // 4. StoreId == null && UserId == null (System Global - if any)
+
+             var allowedStoreIds = await GetAllowedStoreIdsAsync();
+             
+             var ownerIds = await _context.Stores
+                .Where(s => allowedStoreIds.Contains(s.Id))
+                .Select(s => s.OwnerId)
+                .Distinct()
+                .ToListAsync();
+
+             if (User.IsInRole("Admin")) ownerIds.Add(CurrentUserId!.Value);
+
+             query = query.Where(c => 
+                (c.StoreId != null && allowedStoreIds.Contains(c.StoreId.Value)) ||
+                (c.UserId != null && (c.UserId == CurrentUserId || ownerIds.Contains(c.UserId.Value))) ||
+                (c.StoreId == null && c.UserId == null)
+             );
+        }
 
         if (!string.IsNullOrEmpty(search))
         {
@@ -38,13 +67,26 @@ public class CustomerController : BaseController
         }
 
         var customers = await query
-            .Include(c => c.Store)
-            .Include(c => c.User)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 
         ViewBag.Search = search;
         return View(customers);
+    }
+    
+    private async Task<List<int>> GetAllowedStoreIdsAsync()
+    {
+        var userStoreIds = await _context.UserStores
+            .Where(us => us.UserId == CurrentUserId)
+            .Select(us => us.StoreId)
+            .ToListAsync();
+
+        var ownedStoreIds = await _context.Stores
+            .Where(s => s.OwnerId == CurrentUserId)
+            .Select(s => s.Id)
+            .ToListAsync();
+
+        return userStoreIds.Union(ownedStoreIds).ToList();
     }
 
     private async Task<object> GetStoreOptionsAsync()
