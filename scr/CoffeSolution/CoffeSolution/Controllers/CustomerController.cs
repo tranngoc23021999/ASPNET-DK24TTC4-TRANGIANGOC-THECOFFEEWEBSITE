@@ -23,7 +23,6 @@ public class CustomerController : BaseController
     }
 
     [Permission(_menuId, ActionCode.View)]
-    [Permission(_menuId, ActionCode.View)]
     public async Task<IActionResult> Index(string? search)
     {
         await SetPermissionViewBagAsync(_menuId);

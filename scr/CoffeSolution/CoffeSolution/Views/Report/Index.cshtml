@@ -27,8 +27,15 @@
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-4">
-                <select name="storeId" class="form-select" asp-items="ViewBag.Stores" onchange="this.form.submit()">
+                <select name="storeId" class="form-select" onchange="this.form.submit()">
                     <option value="">Tất cả cửa hàng</option>
+                    @if (ViewBag.Stores != null)
+                    {
+                        foreach (var store in (IEnumerable<SelectListItem>)ViewBag.Stores)
+                        {
+                            <option value="@store.Value" selected="@(Convert.ToString(ViewBag.StoreId) == store.Value)">@store.Text</option>
+                        }
+                    }
                 </select>
             </div>
             <div class="col-md-8 d-flex align-items-center">

@@ -41,8 +41,15 @@
             </div>
             <div class="col-md-3">
                  <label class="form-label">Cửa hàng</label>
-                <select name="storeId" class="form-select" asp-items="ViewBag.Stores">
+                <select name="storeId" class="form-select">
                     <option value="">Tất cả cửa hàng</option>
+                    @if (ViewBag.Stores != null)
+                    {
+                        foreach (var store in (IEnumerable<SelectListItem>)ViewBag.Stores)
+                        {
+                            <option value="@store.Value" selected="@(Convert.ToString(ViewBag.StoreId) == store.Value)">@store.Text</option>
+                        }
+                    }
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">

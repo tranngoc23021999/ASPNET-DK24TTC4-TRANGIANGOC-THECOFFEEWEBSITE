@@ -162,6 +162,7 @@ public class ReportController : BaseController
 
         var query = _context.Products
             .Include(p => p.Store)
+            .Include(p => p.ProductStores)
             .AsQueryable();
 
         if (allowedStoreIds != null)
@@ -170,11 +171,33 @@ public class ReportController : BaseController
         }
 
         if (storeId.HasValue)
-            query = query.Where(p => p.StoreId == storeId);
+            query = query.Where(p => p.StoreId == storeId || p.StoreId == null);
 
-        var products = await query
-            .OrderBy(p => p.StockQuantity)
-            .ToListAsync();
+        var products = await query.ToListAsync();
+
+        // Update StockQuantity from ProductStore
+        foreach (var p in products)
+        {
+            if (storeId.HasValue)
+            {
+                var storeStock = p.ProductStores.FirstOrDefault(ps => ps.StoreId == storeId);
+                p.StockQuantity = storeStock?.Quantity ?? 0;
+            }
+            else
+            {
+                // Sum all stores (or allowed stores if restricted)
+                if (allowedStoreIds != null)
+                {
+                    p.StockQuantity = p.ProductStores.Where(ps => allowedStoreIds.Contains(ps.StoreId)).Sum(ps => ps.Quantity);
+                }
+                else
+                {
+                    p.StockQuantity = p.ProductStores.Sum(ps => ps.Quantity);
+                }
+            }
+        }
+
+        products = products.OrderBy(p => p.StockQuantity).ToList();
 
         ViewBag.StoreId = storeId;
         ViewBag.Stores = await GetStoreSelectListAsync();
