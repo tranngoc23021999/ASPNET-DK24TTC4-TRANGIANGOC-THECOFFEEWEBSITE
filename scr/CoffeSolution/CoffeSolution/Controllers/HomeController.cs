@@ -6,6 +6,7 @@ using CoffeSolution.Data;
 using CoffeSolution.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using CoffeSolution.Models.Entities;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CoffeSolution.Controllers
 {
@@ -25,6 +26,7 @@ namespace CoffeSolution.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             if (User.Identity?.IsAuthenticated != true)
@@ -115,11 +117,13 @@ namespace CoffeSolution.Controllers
             return View("Dashboard", viewModel);
         }
 
+        [AllowAnonymous]
         public IActionResult Privacy()
         {
             return View();
         }
 
+        [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

@@ -53,7 +53,7 @@ public class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await _authService.LogoutAsync();
-        return RedirectToAction("Login");
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
