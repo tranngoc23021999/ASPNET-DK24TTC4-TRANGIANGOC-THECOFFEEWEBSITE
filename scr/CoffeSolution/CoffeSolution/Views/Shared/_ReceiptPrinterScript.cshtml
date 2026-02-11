@@ -5,21 +5,11 @@
      * Generates and prints a thermal receipt using DrawPDF.
      * @@param {Object} data - { storeName, date, employee, items: [{productName, quantity, unitPrice, total}], totalAmount, paymentMethod }
      */
-    /**
-     * Generates and prints a thermal receipt using DrawPDF.
-     * @@param {Object} data - { storeName, date, employee, items: [{productName, quantity, unitPrice, total}], totalAmount, paymentMethod }
-     */
-    /**
-     * Generates and prints a thermal receipt using DrawPDF.
-     * @@param {Object} data - { storeName, date, employee, items: [{productName, quantity, unitPrice, total}], totalAmount, paymentMethod }
-     */
     window.generateThermalReceipt = async function(data) {
         try {
-            // Helper to format currency
             const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
             const formatNumber = (val) => new Intl.NumberFormat('vi-VN').format(val);
 
-            // User-provided HTML Template
             let htmlTemplate = `
                 <p style="text-align:center;"><strong>PHIẾU THANH TOÁN</strong></p>
                 <p style="text-align:center;"><strong>{{StoreName}}</strong></p>
@@ -50,7 +40,6 @@
                 <p style="text-align:center; margin-top:10px; font-style:italic;"><span style="font-size:12px;">Cảm ơn và hẹn gặp lại!</span></p>
             `;
 
-            // 1. Generate Rows HTML
             let rowsHtml = '';
             if (data.items && data.items.length > 0) {
                 debugger
@@ -70,10 +59,6 @@
                 });
             }
 
-            // 2. Inject Data into Template
-            // Note: I added {{StoreName}} to the template as it was missing in the snippet but usually required.
-            // If the user's snippet "SỐ CT: {{SoChungTu}}" was intentional, we can map that, but we don't have receipt number in `data` yet, using Date/Store for context.
-            // I'll map what we have.
             let dateStr = '';
             if (data.date) {
                 const d = new Date(data.date);
@@ -106,22 +91,20 @@
                 .replace('{{thanhToan}}', data.paymentMethod || 'Cash')
                 .replace('{{Rows}}', rowsHtml);
 
-            // 3. Parse HTML to Blueprint using DrawPDF
             const blueprintRoot = {
                  "pageSize": {
                      "width": 80, 
-                     "height": 297, // Auto height isn't really thing in these libs usually, so 297 or long enough
+                     "height": 297,
                      "unit": "mm"
                  },
                  "margins": {
-                     "top": 5, 
+                     "top": 20, 
                      "bottom": 5,
                      "left": 5,
                      "right": 5
                  },
             };
 
-            // Use the library's parseHtml method as user requested
             const templateBlueprint = window.DrawPDF.default.parseHtml(filledHtml);
             
             const blueprint = {
@@ -131,13 +114,7 @@
 
             const pdf = new window.DrawPDF.default();
             pdf.setData(blueprint);
-            // // Render
-            // // Note: render(data) is typically for when the blueprint contains variables {{key}}. 
-            // // Since we pre-filled the HTML, the blueprint now contains static text. 
-            // // Passing empty data object or the original data shouldn't hurt, but the variable replacement happened in HTML stage.
-            // const dataUrl = await pdf.render({}); 
-            
-            // Open PDF
+
             const blobUrl = URL.createObjectURL(pdf.getBlob());
             window.open(blobUrl, "_blank");
 

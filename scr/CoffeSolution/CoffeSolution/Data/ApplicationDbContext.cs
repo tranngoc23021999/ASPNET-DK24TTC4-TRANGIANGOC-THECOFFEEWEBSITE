@@ -31,6 +31,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<WarehouseReceipt> WarehouseReceipts => Set<WarehouseReceipt>();
     public DbSet<WarehouseReceiptDetail> WarehouseReceiptDetails => Set<WarehouseReceiptDetail>();
     public DbSet<ProductStore> ProductStores => Set<ProductStore>();
+    public DbSet<Shift> Shifts => Set<Shift>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -286,5 +287,27 @@ public class ApplicationDbContext : DbContext
             .WithMany(s => s.ProductStores)
             .HasForeignKey(ps => ps.StoreId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // ===============================
+        // SHIFT RELATIONSHIPS
+        // ===============================
+
+        modelBuilder.Entity<Shift>()
+            .HasOne(s => s.Staff)
+            .WithMany() // User hasn't navigation to Shifts yet, or we can add it later if needed
+            .HasForeignKey(s => s.StaffId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Shift>()
+            .HasOne(s => s.Store)
+            .WithMany()
+            .HasForeignKey(s => s.StoreId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Shift>()
+            .HasMany(s => s.Orders)
+            .WithOne(o => o.Shift)
+            .HasForeignKey(o => o.ShiftId)
+            .OnDelete(DeleteBehavior.SetNull); // If shift deleted, keep orders
     }
 }

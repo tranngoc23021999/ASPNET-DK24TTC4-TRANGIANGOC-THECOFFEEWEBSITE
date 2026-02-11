@@ -48,6 +48,7 @@ public class OrderApiController : ControllerBase
             OrderCode = $"ORD-{DateTime.Now:yyyyMMdd-HHmmss}",
             StoreId = request.StoreId,
             StaffId = userId,
+            ShiftId = request.ShiftId,
             Status = "Completed",
             PaymentMethod = request.PaymentMethod ?? "Cash",
             Note = request.Note,
@@ -86,7 +87,7 @@ public class OrderApiController : ControllerBase
                 {
                     ProductId = item.ProductId,
                     StoreId = request.StoreId,
-                    Quantity = 0, // Mặc định 0
+                    Quantity = 0,
                     LastUpdated = DateTime.Now
                 };
                 _context.ProductStores.Add(productStore);
@@ -222,6 +223,7 @@ public class OrderApiController : ControllerBase
 public class CreateOrderRequest
 {
     public int StoreId { get; set; }
+    public int? ShiftId { get; set; }
     public string? PaymentMethod { get; set; }
     public string? Note { get; set; }
     public List<OrderItemRequest> Items { get; set; } = new();

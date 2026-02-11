@@ -1,0 +1,75 @@
+@model CoffeSolution.Models.Entities.Shift
+
+@{
+    ViewData["Title"] = "Chỉnh sửa Shift";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Chỉnh sửa Shift #@Model.Id</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Thông tin ca làm việc</h6>
+        </div>
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Cửa hàng</label>
+                        <input type="text" class="form-control" value="@Model.Store?.Name" disabled />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nhân viên</label>
+                        <input type="text" class="form-control" value="@Model.Staff?.FullName" disabled />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Thời gian bắt đầu</label>
+                        <input type="text" class="form-control" value="@Model.StartTime.ToString("dd/MM/yyyy HH:mm:ss")" disabled />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Thời gian kết thúc</label>
+                        <input type="text" class="form-control" value="@(Model.EndTime?.ToString("dd/MM/yyyy HH:mm:ss") ?? "Chưa kết thúc")" disabled />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                         <label asp-for="StartingCash" class="form-label">Tiền đầu ca</label>
+                         <input asp-for="StartingCash" class="form-control" type="number" step="1000" />
+                         <span asp-validation-for="StartingCash" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                         <label asp-for="EndingCash" class="form-label">Tiền kết ca</label>
+                         <input asp-for="EndingCash" class="form-control" type="number" step="1000" />
+                         <span asp-validation-for="EndingCash" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="row">
+                     <div class="col-md-12 mb-3">
+                        <label class="form-label">Tổng doanh thu (Hệ thống tính)</label>
+                        <div class="input-group">
+                             <span class="input-group-text">TM</span>
+                             <input type="text" class="form-control" value="@Model.TotalRevenueCash.ToString("N0")" disabled />
+                             <span class="input-group-text">Thẻ</span>
+                             <input type="text" class="form-control" value="@Model.TotalRevenueCard.ToString("N0")" disabled />
+                             <span class="input-group-text">CK</span>
+                             <input type="text" class="form-control" value="@Model.TotalRevenueTransfer.ToString("N0")" disabled />
+                        </div>
+                     </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

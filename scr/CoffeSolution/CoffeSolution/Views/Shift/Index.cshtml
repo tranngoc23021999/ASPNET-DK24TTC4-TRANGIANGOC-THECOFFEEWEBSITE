@@ -1,0 +1,128 @@
+@model IEnumerable<CoffeSolution.Models.Entities.Shift>
+
+@{
+    ViewData["Title"] = "Quản lý Ca làm việc";
+}
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h1>@ViewData["Title"]</h1>
+    </div>
+    
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Cửa hàng</label>
+                <select name="storeId" class="form-select">
+                    <option value="">Tất cả</option>
+                    @foreach (var store in (IEnumerable<CoffeSolution.Models.Entities.Store>)ViewBag.Stores)
+                    {
+                        <option value="@store.Id">@store.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Từ ngày</label>
+                <input type="date" name="fromDate" class="form-control" value="@Context.Request.Query["fromDate"]" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Đến ngày</label>
+                <input type="date" name="toDate" class="form-control" value="@Context.Request.Query["toDate"]" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-filter"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cửa hàng</th>
+                        <th>Nhân viên</th>
+                        <th>Bắt đầu</th>
+                        <th>Kết thúc</th>
+                        <th class="text-end">Tiền đầu ca</th>
+                        <th class="text-end">Tiền cuối ca</th>
+                        <th class="text-end">Doanh thu (TM)</th>
+                        <th class="text-end">Chênh lệch</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>#@item.Id</td>
+                            <td>@item.Store?.Name</td>
+                            <td>
+                                <div class="fw-bold">@item.Staff?.FullName</div>
+                                <small class="text-muted">@item.Staff?.Username</small>
+                            </td>
+                            <td>@item.StartTime.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(item.EndTime?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                            <td class="text-end">@item.StartingCash.ToString("N0")</td>
+                            <td class="text-end">@(item.EndingCash?.ToString("N0") ?? "-")</td>
+                            <td class="text-end text-success fw-bold">@item.TotalRevenueCash.ToString("N0")</td>
+                            <td class="text-end">
+                                @if (item.Status == "Closed" && item.EndingCash.HasValue)
+                                {
+                                    var expected = item.StartingCash + item.TotalRevenueCash;
+                                    var diff = item.EndingCash.Value - expected;
+                                    if (diff < 0)
+                                    {
+                                        <span class="text-danger">@diff.ToString("N0")</span>
+                                    }
+                                    else if (diff > 0)
+                                    {
+                                         <span class="text-success">+@diff.ToString("N0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.Status == "Open")
+                                {
+                                    <span class="badge bg-success">Đang mở</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Đã đóng</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Chi tiết">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                @if (ViewBag.CanEdit == true)
+                                {
+                                    <a asp-controller="Shift" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Sửa">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

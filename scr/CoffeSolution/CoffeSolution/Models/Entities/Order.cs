@@ -21,6 +21,10 @@ public class Order
     public int? StaffId { get; set; }
     public User? Staff { get; set; }
 
+    // Ca làm việc
+    public int? ShiftId { get; set; }
+    public Shift? Shift { get; set; }
+
     // Navigation
     public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 }

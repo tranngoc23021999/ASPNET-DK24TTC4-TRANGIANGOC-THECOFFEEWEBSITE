@@ -2,17 +2,32 @@
     ViewData["Title"] = "Báo cáo doanh thu";
 }
 
-<div class="page-header">
+<div class="page-header d-print-none">
     <h1>Báo cáo doanh thu</h1>
     <div class="page-actions">
         <a asp-action="Index" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Quay lại
         </a>
+        <button onclick="window.print()" class="btn btn-secondary ms-2">
+            <i class="bi bi-printer"></i> In báo cáo
+        </button>
+    </div>
+</div>
+
+<!-- Print Header -->
+<div class="d-none d-print-block mb-4">
+    <div class="text-center">
+        <h2>BÁO CÁO DOANH THU</h2>
+        <p>Từ ngày: @(((DateTime)ViewBag.FromDate).ToString("dd/MM/yyyy")) - Đến ngày: @(((DateTime)ViewBag.ToDate).ToString("dd/MM/yyyy"))</p>
+        @if (ViewBag.StoreId != null)
+        {
+             <p>Cửa hàng: @(((IEnumerable<SelectListItem>)ViewBag.Stores).FirstOrDefault(x => x.Value == ViewBag.StoreId.ToString())?.Text)</p>
+        }
     </div>
 </div>
 
 <!-- Filter -->
-<div class="card mb-4">
+<div class="card mb-4 d-print-none">
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-3">

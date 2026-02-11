@@ -1,0 +1,91 @@
+@media print {
+    /* Hide non-essential elements */
+    .sidebar,
+    .top-header,
+    .page-actions,
+    .btn,
+    form,
+    .alert,
+    footer,
+    .d-print-none {
+        display: none !important;
+    }
+
+    /* Adjust layout for print */
+    body {
+        background-color: white !important;
+        font-family: 'Times New Roman', serif; /* Standard for formal reports */
+        color: black !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    .content-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        margin-bottom: 20px !important;
+        break-inside: avoid;
+    }
+
+    .card-header {
+        background-color: #f8f9fa !important;
+        border-bottom: 1px solid #ddd !important;
+        color: black !important;
+    }
+
+    /* Table styling for print */
+    .table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    
+    .table th, .table td {
+        border: 1px solid #ddd !important;
+        padding: 8px !important;
+        color: black !important;
+    }
+
+    .table thead th {
+        background-color: #f0f0f0 !important;
+        font-weight: bold !important;
+    }
+
+    /* Badge adjustments */
+    .badge {
+        border: 1px solid #000 !important;
+        color: black !important;
+        background: transparent !important;
+        padding: 2px 6px;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+        color: black !important;
+        margin-top: 0;
+    }
+
+    a {
+        text-decoration: none !important;
+        color: black !important;
+    }
+
+    /* Utilities */
+    .text-success, .text-danger, .text-warning, .text-primary, .text-info, .text-muted {
+        color: black !important; /* Force black for better contrast on monochrome printers */
+    }
+
+    /* Ensure backgrounds work if user enables them, but default to clean */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

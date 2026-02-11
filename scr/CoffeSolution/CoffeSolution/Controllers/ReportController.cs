@@ -23,7 +23,7 @@ public class ReportController : BaseController
     }
 
     [Permission(_menuId, ActionCode.View)]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? storeId)
     {
         await SetPermissionViewBagAsync(_menuId);
 
@@ -35,8 +35,16 @@ public class ReportController : BaseController
         var startOfMonth = new DateTime(today.Year, today.Month, 1);
 
         var ordersQuery = _context.Orders.AsQueryable();
+        
         if (allowedStoreIds != null)
+        {
             ordersQuery = ordersQuery.Where(o => allowedStoreIds.Contains(o.StoreId));
+        }
+
+        if (storeId.HasValue)
+        {
+            ordersQuery = ordersQuery.Where(o => o.StoreId == storeId);
+        }
 
         // Tổng quan hôm nay
         ViewBag.TodayOrders = await ordersQuery
@@ -66,9 +74,21 @@ public class ReportController : BaseController
             productsQuery = productsQuery.Where(p => p.StoreId == null || (p.StoreId.HasValue && allowedStoreIds.Contains(p.StoreId.Value)));
         }
 
+        if (storeId.HasValue)
+        {
+            // For stores query, if a specific store is selected, we filter by that ID
+            storesQuery = storesQuery.Where(s => s.Id == storeId);
+            
+            // For products, filter by the specific store
+            productsQuery = productsQuery.Where(p => p.StoreId == storeId);
+        }
+
         ViewBag.TotalStores = await storesQuery.CountAsync();
         ViewBag.TotalProducts = await productsQuery.CountAsync();
         ViewBag.LowStockProducts = await productsQuery.Where(p => p.StockQuantity <= 10).CountAsync();
+
+        ViewBag.StoreId = storeId;
+        ViewBag.Stores = await GetStoreSelectListAsync();
 
         return View();
     }
@@ -82,14 +102,14 @@ public class ReportController : BaseController
         var to = toDate ?? DateTime.Today;
 
         var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
+        var allowedStoreIds = isAdmin ? null : await GetAllowedStoreIdsAsync(_context);
 
         var query = _context.Orders
             .Include(o => o.Store)
             .Where(o => o.CreatedAt >= from && o.CreatedAt <= to.AddDays(1) && o.Status == "Completed");
 
-        if (!isAdmin)
+        if (allowedStoreIds != null)
         {
-            var allowedStoreIds = await GetAllowedStoreIdsAsync(_context);
             query = query.Where(o => allowedStoreIds.Contains(o.StoreId));
         }
 
@@ -138,14 +158,14 @@ public class ReportController : BaseController
         await SetPermissionViewBagAsync(_menuId);
 
         var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
+        var allowedStoreIds = isAdmin ? null : await GetAllowedStoreIdsAsync(_context);
 
         var query = _context.Products
             .Include(p => p.Store)
             .AsQueryable();
 
-        if (!isAdmin)
+        if (allowedStoreIds != null)
         {
-            var allowedStoreIds = await GetAllowedStoreIdsAsync(_context);
             query = query.Where(p => p.StoreId == null || (p.StoreId.HasValue && allowedStoreIds.Contains(p.StoreId.Value)));
         }
 
@@ -164,14 +184,50 @@ public class ReportController : BaseController
 
 
 
+    [Permission(_menuId, ActionCode.View)]
+    public async Task<IActionResult> Shifts(int? storeId, DateTime? fromDate, DateTime? toDate)
+    {
+        await SetPermissionViewBagAsync(_menuId);
+
+        var from = fromDate ?? DateTime.Today.AddDays(-7);
+        var to = toDate ?? DateTime.Today;
+
+        var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
+        var allowedStoreIds = isAdmin ? null : await GetAllowedStoreIdsAsync(_context);
+
+        var query = _context.Shifts
+            .Include(s => s.Store)
+            .Include(s => s.Staff)
+            .Where(s => s.StartTime >= from && s.StartTime <= to.AddDays(1));
+
+        if (allowedStoreIds != null)
+        {
+            query = query.Where(s => allowedStoreIds.Contains(s.StoreId));
+        }
+
+        if (storeId.HasValue)
+            query = query.Where(s => s.StoreId == storeId);
+
+        var shifts = await query
+            .OrderByDescending(s => s.StartTime)
+            .ToListAsync();
+
+        ViewBag.FromDate = from;
+        ViewBag.ToDate = to;
+        ViewBag.StoreId = storeId;
+        ViewBag.Stores = await GetStoreSelectListAsync();
+
+        return View(shifts);
+    }
+
     private async Task<List<SelectListItem>> GetStoreSelectListAsync()
     {
         var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
+        var allowedStoreIds = isAdmin ? null : await GetAllowedStoreIdsAsync(_context);
         var query = _context.Stores.Where(s => s.IsActive);
 
-        if (!isAdmin)
+        if (allowedStoreIds != null)
         {
-            var allowedStoreIds = await GetAllowedStoreIdsAsync(_context);
             query = query.Where(s => allowedStoreIds.Contains(s.Id));
         }
 

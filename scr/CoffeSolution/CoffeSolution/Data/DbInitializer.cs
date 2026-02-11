@@ -64,11 +64,6 @@ public static class DbInitializer
     /// </summary>
     private static async Task SeedMenusAsync(ApplicationDbContext context, ILogger logger)
     {
-        if (await context.Menus.AnyAsync())
-        {
-            return;
-        }
-
         var menus = new List<Menu>
         {
             new() { Code = MenuCode.Dashboard, Name = "Dashboard", Url = "/", Icon = "fa-dashboard", Order = 1 },
@@ -83,10 +78,18 @@ public static class DbInitializer
             new() { Code = MenuCode.Report, Name = "Báo cáo", Url = "/Report", Icon = "fa-chart-bar", Order = 10 },
             new() { Code = MenuCode.User, Name = "Người dùng", Url = "/User", Icon = "fa-user-cog", Order = 11 },
             new() { Code = MenuCode.Role, Name = "Phân quyền", Url = "/Role", Icon = "fa-shield-alt", Order = 12 },
-            new() { Code = MenuCode.Setting, Name = "Cài đặt", Url = "/Setting", Icon = "fa-cog", Order = 13 }
+            new() { Code = MenuCode.Setting, Name = "Cài đặt", Url = "/Setting", Icon = "fa-cog", Order = 13 },
+            new() { Code = MenuCode.Shift, Name = "Phiên làm việc", Url = "/Shift", Icon = "fa-clock", Order = 5 }
         };
 
-        context.Menus.AddRange(menus);
+        foreach (var menu in menus)
+        {
+            if (!await context.Menus.AnyAsync(m => m.Code == menu.Code))
+            {
+                context.Menus.Add(menu);
+                logger.LogInformation($"Seeded new menu: {menu.Name}");
+            }
+        }
         await context.SaveChangesAsync();
     }
 
@@ -95,16 +98,7 @@ public static class DbInitializer
     /// </summary>
     private static async Task SeedMenuActionsAsync(ApplicationDbContext context, ILogger logger)
     {
-        if (await context.MenuActions.AnyAsync())
-        {
-            logger.LogInformation("MenuActions already seeded.");
-            return;
-        }
-
         var menus = await context.Menus.ToListAsync();
-        var actions = new List<MenuAction>();
-
-        // Actions chuẩn cho mỗi menu
         var standardActions = new[]
         {
             (ActionCode.View, "Xem", 1),
@@ -114,23 +108,31 @@ public static class DbInitializer
             (ActionCode.Export, "Xuất file", 5)
         };
 
+        var actionsToAdd = new List<MenuAction>();
+
         foreach (var menu in menus)
         {
             foreach (var (code, name, order) in standardActions)
             {
-                actions.Add(new MenuAction
+                if (!await context.MenuActions.AnyAsync(a => a.MenuId == menu.Id && a.Code == code))
                 {
-                    MenuId = menu.Id,
-                    Code = code,
-                    Name = name,
-                    Order = order
-                });
+                    actionsToAdd.Add(new MenuAction
+                    {
+                        MenuId = menu.Id,
+                        Code = code,
+                        Name = name,
+                        Order = order
+                    });
+                }
             }
         }
 
-        context.MenuActions.AddRange(actions);
-        await context.SaveChangesAsync();
-        logger.LogInformation("Seeded {Count} menu actions.", actions.Count);
+        if (actionsToAdd.Any())
+        {
+            context.MenuActions.AddRange(actionsToAdd);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded {Count} new menu actions.", actionsToAdd.Count);
+        }
     }
 
     /// <summary>
@@ -138,11 +140,8 @@ public static class DbInitializer
     /// </summary>
     private static async Task SeedRolePermissionsAsync(ApplicationDbContext context, ILogger logger)
     {
-        if (await context.RoleMenuPermissions.AnyAsync())
-        {
-            logger.LogInformation("RoleMenuPermissions already seeded.");
-            return;
-        }
+        // Removed early return to allow updating permissions
+        // if (await context.RoleMenuPermissions.AnyAsync()) ...
 
         var roles = await context.Roles.ToListAsync();
         var menus = await context.Menus.Include(m => m.MenuActions).ToListAsync();
@@ -184,7 +183,7 @@ public static class DbInitializer
         }
 
         // Leader: VIEW/CREATE/EDIT cho ORDER, POS, PRODUCT, EMPLOYEE + VIEW cho các menu khác
-        var leaderFullMenus = new[] { "ORDER", "POS", "PRODUCT", "EMPLOYEE", "DASHBOARD" };
+        var leaderFullMenus = new[] { "ORDER", "POS", "PRODUCT", "EMPLOYEE", "DASHBOARD", "SHIFT" };
         var leaderViewMenus = new[] { "WAREHOUSE", "CUSTOMER", "REPORT" };
         
         foreach (var menu in menus.Where(m => leaderFullMenus.Contains(m.Code)))
@@ -245,10 +244,19 @@ public static class DbInitializer
             }
         }
 
-        context.RoleMenuPermissions.AddRange(permissions);
+        foreach (var perm in permissions)
+        {
+            if (!await context.RoleMenuPermissions.AnyAsync(p => p.RoleId == perm.RoleId && p.MenuId == perm.MenuId && p.MenuActionId == perm.MenuActionId))
+            {
+                context.RoleMenuPermissions.Add(perm);
+            }
+        }
+        
         await context.SaveChangesAsync();
-        logger.LogInformation("Seeded {Count} role permissions.", permissions.Count);
+        logger.LogInformation("Seeded role permissions (if missing).");
     }
+    
+
 
     /// <summary>
     /// Seed Admin User mặc định

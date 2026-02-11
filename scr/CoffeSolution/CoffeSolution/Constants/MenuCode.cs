@@ -22,4 +22,5 @@ public static class MenuCode
     public const string Role = "ROLE";
     public const string Report = "REPORT";
     public const string Setting = "SETTING";
+    public const string Shift = "SHIFT";
 }

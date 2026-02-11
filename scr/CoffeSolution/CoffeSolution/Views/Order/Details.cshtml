@@ -27,6 +27,14 @@
                     <div class="col-md-6">
                         <label class="text-muted small">Mã đơn hàng:</label>
                         <div><strong>@Model.OrderCode</strong></div>
+                        @if (Model.ShiftId.HasValue)
+                        {
+                            <div class="mt-1">
+                                <span class="badge bg-info text-dark">
+                                    <i class="bi bi-clock"></i> Ca #@Model.ShiftId
+                                </span>
+                            </div>
+                        }
                     </div>
                     <div class="col-md-6">
                         <label class="text-muted small">Thời gian:</label>

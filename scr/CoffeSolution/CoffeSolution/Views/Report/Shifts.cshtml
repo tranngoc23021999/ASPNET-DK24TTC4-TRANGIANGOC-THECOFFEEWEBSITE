@@ -1,0 +1,171 @@
+@model IEnumerable<CoffeSolution.Models.Entities.Shift>
+@{
+    ViewData["Title"] = "Báo cáo phiên làm việc";
+}
+
+<div class="page-header d-print-none">
+    <h1>Báo cáo phiên làm việc</h1>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+        <button onclick="window.print()" class="btn btn-secondary ms-2">
+            <i class="bi bi-printer"></i> In báo cáo
+        </button>
+    </div>
+</div>
+
+<!-- Print Header -->
+<div class="d-none d-print-block mb-4">
+    <div class="text-center">
+        <h2>BÁO CÁO PHIÊN LÀM VIỆC</h2>
+        <p>Từ ngày: @(((DateTime)ViewBag.FromDate).ToString("dd/MM/yyyy")) - Đến ngày: @(((DateTime)ViewBag.ToDate).ToString("dd/MM/yyyy"))</p>
+        @if (ViewBag.StoreId != null)
+        {
+             <p>Cửa hàng: @(((IEnumerable<SelectListItem>)ViewBag.Stores).FirstOrDefault(x => x.Value == ViewBag.StoreId.ToString())?.Text)</p>
+        }
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-4 d-print-none">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+             <div class="col-md-3">
+                <label class="form-label">Từ ngày</label>
+                <input type="date" name="fromDate" value="@(((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd"))" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Đến ngày</label>
+                <input type="date" name="toDate" value="@(((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd"))" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                 <label class="form-label">Cửa hàng</label>
+                <select name="storeId" class="form-select" asp-items="ViewBag.Stores">
+                    <option value="">Tất cả cửa hàng</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Xem báo cáo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Shift Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã / Ngày</th>
+                        <th>Cửa hàng / Nhân viên</th>
+                        <th class="text-center">T.Gian</th>
+                        <th class="text-end">Đầu ca</th>
+                        <th class="text-end">Doanh thu</th>
+                        <th>Tổng tiền mặt</th>
+                         <th class="text-end">Chênh lệch</th>
+                        <th class="text-center">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var shift in Model)
+                        {
+                            var totalRevenue = shift.TotalRevenueCash + shift.TotalRevenueCard + shift.TotalRevenueTransfer;
+                            // Calculate variance only if EndingCash is entered (Shift closed)
+                            decimal? variance = null;
+                            if (shift.EndingCash.HasValue)
+                            {
+                                // Variance = Actual (Ending) - Expected (Start + Cash Revenue)
+                                 // Note: Assuming logic is EndingCash - (StartingCash + TotalRevenueCash) - any withdrawals? 
+                                 // Simplified: Variance = EndingCash - (StartingCash + TotalRevenueCash)
+                                 variance = shift.EndingCash.Value - (shift.StartingCash + shift.TotalRevenueCash);
+                            }
+
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">#@shift.Id</div>
+                                    <small class="text-muted">@shift.StartTime.ToString("dd/MM/yyyy")</small>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@shift.Store.Name</div>
+                                    <small class="text-muted">@shift.Staff.FullName</small>
+                                </td>
+                                <td class="text-center">
+                                    <div class="small">@shift.StartTime.ToString("HH:mm")</div>
+                                    <div class="small text-muted">
+                                        @(shift.EndTime.HasValue ? shift.EndTime.Value.ToString("HH:mm") : "--:--")
+                                    </div>
+                                </td>
+                                <td class="text-end text-mono">
+                                    @shift.StartingCash.ToString("N0")
+                                </td>
+                                <td class="text-end">
+                                    <div class="fw-bold text-success">@totalRevenue.ToString("N0")</div>
+                                    <small class="text-muted d-block" style="font-size: 0.7em;">TM: @shift.TotalRevenueCash.ToString("N0")</small>
+                                    <small class="text-muted d-block" style="font-size: 0.7em;">CK: @shift.TotalRevenueTransfer.ToString("N0")</small>
+                                    <small class="text-muted d-block" style="font-size: 0.7em;">Thẻ: @shift.TotalRevenueCard.ToString("N0")</small>
+                                </td>
+                                 <td class="text-end text-mono">
+                                    @if(shift.EndingCash.HasValue)
+                                    {
+                                        <span>@shift.EndingCash.Value.ToString("N0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">--</span>
+                                    }
+                                </td>
+                                <td class="text-end text-mono">
+                                    @if (variance.HasValue)
+                                    {
+                                        if (variance.Value == 0)
+                                        {
+                                            <span class="text-success fw-bold">OK</span>
+                                        }
+                                        else if (variance.Value > 0)
+                                        {
+                                            <span class="text-primary">+@variance.Value.ToString("N0")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger">@variance.Value.ToString("N0")</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                         <span class="text-muted">--</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (shift.Status == "Open")
+                                    {
+                                        <span class="badge bg-success">Đang mở</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Đã đóng</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                                <p class="mt-2">Không tìm thấy phiên làm việc nào</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

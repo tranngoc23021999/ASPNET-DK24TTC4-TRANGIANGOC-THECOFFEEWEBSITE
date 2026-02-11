@@ -78,7 +78,7 @@ public class ProductApiController : ControllerBase
             query = query.Where(p => p.Category == category);
 
         var products = await query
-            .Include(p => p.Store) // Join with Store
+            .Include(p => p.Store)
             .Include(p => p.ProductStores)
             .OrderBy(p => p.Category)
             .ThenBy(p => p.Name)
@@ -98,7 +98,7 @@ public class ProductApiController : ControllerBase
                 p.IsActive,
                 p.AllowNegativeStock,
                 p.StoreId,
-                StoreName = p.Store != null ? p.Store.Name : "Global" // Return Store Name or "Global"
+                StoreName = p.Store != null ? p.Store.Name : "Global"
             })
             .ToListAsync();
 

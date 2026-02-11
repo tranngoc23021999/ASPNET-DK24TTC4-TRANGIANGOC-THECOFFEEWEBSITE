@@ -78,6 +78,7 @@ public class OrderController : BaseController
         var order = await _context.Orders
             .Include(o => o.Store)
             .Include(o => o.Staff)
+            .Include(o => o.Shift) // Include Shift info
             .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Product)
             .FirstOrDefaultAsync(o => o.Id == id);
