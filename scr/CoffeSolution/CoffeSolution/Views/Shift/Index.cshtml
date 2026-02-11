@@ -14,25 +14,44 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Cửa hàng</label>
                 <select name="storeId" class="form-select">
                     <option value="">Tất cả</option>
                     @foreach (var store in (IEnumerable<CoffeSolution.Models.Entities.Store>)ViewBag.Stores)
                     {
-                        <option value="@store.Id">@store.Name</option>
+                        if (ViewBag.StoreId != null && store.Id == (int)ViewBag.StoreId)
+                        {
+                            <option value="@store.Id" selected>@store.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@store.Id">@store.Name</option>
+                        }
                     }
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
+                <label class="form-label">Trạng thái</label>
+                <select name="status" class="form-select">
+                    <option value="">Tất cả</option>
+                    <!option value="Open" @(ViewBag.Status == "Open" ? "selected" : "")>Đang mở</!option>
+                    <!option value="Closed" @(ViewBag.Status == "Closed" ? "selected" : "")>Đã đóng</!option>
+                </select>
+            </div>
+             <div class="col-md-2">
+                <label class="form-label">Nhân viên</label>
+                <input type="text" name="searchStaff" class="form-control" placeholder="Tên/Username..." value="@ViewBag.SearchStaff" />
+            </div>
+            <div class="col-md-2">
                 <label class="form-label">Từ ngày</label>
-                <input type="date" name="fromDate" class="form-control" value="@Context.Request.Query["fromDate"]" />
+                <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Đến ngày</label>
-                <input type="date" name="toDate" class="form-control" value="@Context.Request.Query["toDate"]" />
+                <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" />
             </div>
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-filter"></i> Lọc
                 </button>

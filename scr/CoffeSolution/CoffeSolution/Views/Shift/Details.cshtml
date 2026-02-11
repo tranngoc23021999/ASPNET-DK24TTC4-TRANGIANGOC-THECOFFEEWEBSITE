@@ -79,11 +79,11 @@
                                 var diffClass = diff == 0 ? "text-success" : (diff > 0 ? "text-success" : "text-danger");
                             }
                             <strong>Đối soát tiền mặt:</strong> 
-                            Đầu ca (@Model.StartingCash.ToString("N0")) + Thu TM (@Model.TotalRevenueCash.ToString("N0")) = <strong>@expected.ToString("N0")</strong>.
-                            <br/>
-                            Thực tế: <strong>@Model.EndingCash.Value.ToString("N0")</strong>.
-                            <br/>
-                            Kết quả: <span class="@diffClass fw-bold">@statusText @Math.Abs(diff).ToString("N0")</span>
+                            <ol>
+                                <li>Đầu ca (@Model.StartingCash.ToString("N0")) + Thu TM (@Model.TotalRevenueCash.ToString("N0")) = <strong>@expected.ToString("N0")</strong></li>
+                                <li>Thực tế: <strong>@Model.EndingCash.Value.ToString("N0")</strong></li>
+                                <li>Kết quả: <span class="@diffClass fw-bold">@statusText @Math.Abs(diff).ToString("N0")</span></li>
+                            </ol>
                         </div>
                     </div>
                 </div>
