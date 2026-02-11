@@ -145,10 +145,39 @@
     }
 </div>
 
+
+
 @section Scripts {
+    <partial name="_ReceiptPrinterScript" />
     <script>
-        function printOrder(id) {
-            window.open(`/Order/Print/${id}`, '_blank');
+
+
+        async function printOrder(id) {
+            try {
+                const response = await fetch(`/api/OrderApi/${id}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const order = result.data;
+                    
+                    const printData = {
+                        storeName: order.store?.name || order.storeName || 'Unknown Store',
+                        date: new Date(order.createdAt).toLocaleString('vi-VN'),
+                        employee: order.staff?.fullName || order.staffName || 'N/A',
+                        items: order.items,
+                        totalAmount: order.totalAmount,
+                        paymentMethod: order.paymentMethod,
+                        orderCode: order.orderCode,
+                    };
+
+                    await generateThermalReceipt(printData);
+                } else {
+                    alert('Không thể tải thông tin đơn hàng: ' + result.message);
+                }
+            } catch (error) {
+                console.error("Print Error:", error);
+                alert('Đã xảy ra lỗi khi in hóa đơn');
+            }
         }
     </script>
 }

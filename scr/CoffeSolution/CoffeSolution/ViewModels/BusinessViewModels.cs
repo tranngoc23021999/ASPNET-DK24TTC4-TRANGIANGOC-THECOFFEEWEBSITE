@@ -37,12 +37,16 @@ public class ProductViewModel
 
     [Display(Name = "Cửa hàng")]
     public int? StoreId { get; set; }
+    public string? StoreName { get; set; }
 
     [Display(Name = "Ngày tạo")]
     public DateTime CreatedAt { get; set; }
 
     public bool IsSystem { get; set; }
     public int? CreatedById { get; set; }
+
+    [Display(Name = "Cho phép bán âm kho")]
+    public bool AllowNegativeStock { get; set; }
 }
 
 public class SupplierViewModel
@@ -82,7 +86,7 @@ public class SupplierViewModel
     public int? CreatedById { get; set; }
 }
 
-public class OrderViewModel
+public class OrderPosViewModel
 {
     public int Id { get; set; }
     public string OrderCode { get; set; } = null!;

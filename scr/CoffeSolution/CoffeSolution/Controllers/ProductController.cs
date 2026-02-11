@@ -78,20 +78,53 @@ public class ProductController : BaseController
             );
         }
 
+        // Filter by StoreId if provided, BUT keep Global products visible
+        // Logic: 
+        // If StoreId is selected:
+        // - Show products where Product.StoreId == StoreId
+        // - OR Product.StoreId == null (Global) [Subject to other permission checks already done above]
+        
         if (storeId.HasValue)
         {
-            query = query.Where(p => p.StoreId == storeId);
-        }
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            query = query.Where(p =>
-                p.Name.Contains(search) ||
-                (p.Category != null && p.Category.Contains(search)));
+            // Don't just .Where(p => p.StoreId == storeId), because that hides Global items.
+            // instead, filtering is already done by `allowedStoreIds` logic above for visibility.
+            // We just need to ensure `storeId` is effectively used for STOCK CALCULATION.
+            
+            // However, if the USER wants to *filter* the list to only see "What is enabled in Store X",
+            // that's a different requirement. Usually "Index" shows all available items.
+            // But if the user says "Filter by Store", they might expect to see *only* items relevant to that store.
+            // For Global items, they are relevant to ALL stores.
+            
+            // Let's refine the Visibility Filter to be strict about the selected Store
+             query = query.Where(p => 
+                p.StoreId == storeId || // Owned by this store
+                p.StoreId == null       // Global (system or owner-global)
+            );
         }
 
         var products = await query
             .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new ProductViewModel
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price,
+                ImageUrl = p.ImageUrl,
+                Category = p.Category,
+                Unit = p.Unit,
+                IsActive = p.IsActive,
+                IsSystem = p.IsSystem,
+                StoreId = p.StoreId,
+                StoreName = p.Store != null ? p.Store.Name : (p.IsSystem ? "Hệ thống" : "Global"),
+                CreatedById = p.CreatedById,
+                CreatedAt = p.CreatedAt,
+                AllowNegativeStock = p.AllowNegativeStock,
+                // Tính tồn kho: Join manually to get specific store stock
+                StockQuantity = storeId.HasValue 
+                    ? p.ProductStores.Where(ps => ps.StoreId == storeId).Select(ps => ps.Quantity).FirstOrDefault()
+                    : p.ProductStores.Sum(ps => ps.Quantity)
+            })
             .ToListAsync();
 
         ViewBag.Search = search;
@@ -173,11 +206,12 @@ public class ProductController : BaseController
             Price = model.Price,
             ImageUrl = model.ImageUrl,
             Category = model.Category,
-            StockQuantity = model.StockQuantity,
+            // StockQuantity = model.StockQuantity, // Removed: Stock is managed via Warehouse
             Unit = model.Unit,
             IsActive = model.IsActive,
             StoreId = model.StoreId,
             IsSystem = model.IsSystem,
+            AllowNegativeStock = model.AllowNegativeStock,
             CreatedById = model.CreatedById ?? CurrentUserId, // Track creator always if possible
             CreatedAt = DateTime.Now
         };
@@ -206,6 +240,7 @@ public class ProductController : BaseController
             StockQuantity = product.StockQuantity,
             Unit = product.Unit,
             IsActive = product.IsActive,
+            AllowNegativeStock = product.AllowNegativeStock,
             StoreId = product.StoreId,
             CreatedAt = product.CreatedAt
         };
@@ -249,9 +284,10 @@ public class ProductController : BaseController
         product.Price = model.Price;
         product.ImageUrl = model.ImageUrl;
         product.Category = model.Category;
-        product.StockQuantity = model.StockQuantity;
+        // product.StockQuantity = model.StockQuantity; // Removed: Stock is managed via Warehouse
         product.Unit = model.Unit;
         product.IsActive = model.IsActive;
+        product.AllowNegativeStock = model.AllowNegativeStock;
         product.StoreId = model.StoreId;
 
         await _context.SaveChangesAsync();

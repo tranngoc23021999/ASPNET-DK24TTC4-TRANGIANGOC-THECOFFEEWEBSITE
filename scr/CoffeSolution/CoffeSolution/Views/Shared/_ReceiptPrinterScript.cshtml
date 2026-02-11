@@ -1,0 +1,149 @@
+
+<script src="~/dist/drawpdf.standalone.umd.cjs"></script>
+<script>
+    /**
+     * Generates and prints a thermal receipt using DrawPDF.
+     * @@param {Object} data - { storeName, date, employee, items: [{productName, quantity, unitPrice, total}], totalAmount, paymentMethod }
+     */
+    /**
+     * Generates and prints a thermal receipt using DrawPDF.
+     * @@param {Object} data - { storeName, date, employee, items: [{productName, quantity, unitPrice, total}], totalAmount, paymentMethod }
+     */
+    /**
+     * Generates and prints a thermal receipt using DrawPDF.
+     * @@param {Object} data - { storeName, date, employee, items: [{productName, quantity, unitPrice, total}], totalAmount, paymentMethod }
+     */
+    window.generateThermalReceipt = async function(data) {
+        try {
+            // Helper to format currency
+            const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+            const formatNumber = (val) => new Intl.NumberFormat('vi-VN').format(val);
+
+            // User-provided HTML Template
+            let htmlTemplate = `
+                <p style="text-align:center;"><strong>PHIẾU THANH TOÁN</strong></p>
+                <p style="text-align:center;"><strong>{{StoreName}}</strong></p>
+                <p style="text-align:center;"><span style="font-size:12px;">{{SoChungTu}}</span></p>
+                <p style="text-align:left;"><span style="font-size:12px;">Ngày: {{thoigian}}</span></p>
+                <p style="text-align:left;"><span style="font-size:12px;">Nhân viên: {{tenNhanVien}}</span></p>
+                <figure class="table" style="width:100%;">
+                    <table class="ck-table-resized" style="width:100%; border-collapse: collapse;">
+                        <colgroup>
+                            <col style="width:35%;">
+                            <col style="width:15%;">
+                            <col style="width:25%;">
+                            <col style="width:25%;">
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <td style="border-color:hsl(0, 0%, 100%);border-style:solid;"><span style="font-size:12px; font-weight:bold;">Món</span></td>
+                                <td style="border-color:hsl(0, 0%, 100%);border-style:solid; text-align:center;"><span style="font-size:12px; font-weight:bold;">SL</span></td>
+                                <td style="border-color:hsl(0, 0%, 100%);border-style:solid; text-align:right;"><span style="font-size:12px; font-weight:bold;">Đ.Giá</span></td>
+                                <td style="border-color:hsl(0, 0%, 100%);border-style:solid; text-align:right;"><span style="font-size:12px; font-weight:bold;">TT</span></td>
+                            </tr>
+                            {{Rows}}
+                        </tbody>
+                    </table>
+                </figure>
+                <p style="text-align:right; margin-top:10px;"><span style="font-size:12px; font-weight:bold;">Tổng cộng: {{tongTien}}</span></p>
+                <p style="text-align:right;"><span style="font-size:12px;">Thanh toán: {{thanhToan}}</span></p>
+                <p style="text-align:center; margin-top:10px; font-style:italic;"><span style="font-size:12px;">Cảm ơn và hẹn gặp lại!</span></p>
+            `;
+
+            // 1. Generate Rows HTML
+            let rowsHtml = '';
+            if (data.items && data.items.length > 0) {
+                debugger
+                data.items.forEach(item => {
+                    const name = item.productName || item.product?.name || 'Item';
+                    const qty = (item.quantity || 0).toString();
+                    const price = formatNumber(item.unitPrice || item.product?.price || 0);
+                    const total = formatNumber(item.total || ((item.unitPrice || item.product?.price || 0) * (item.quantity || 0)));
+                    
+                    rowsHtml += `
+                        <tr>
+                            <td style="border-color:hsl(0, 0%, 100%);border-style:solid;"><span style="font-size:12px;">${name}</span></td>
+                            <td style="border-color:hsl(0, 0%, 100%);border-style:solid;text-align:center;"><span style="font-size:12px;">${qty}</span></td>
+                            <td style="border-color:hsl(0, 0%, 100%);border-style:solid;text-align:right;"><span style="font-size:12px;">${price}</span></td>
+                            <td style="border-color:hsl(0, 0%, 100%);border-style:solid;text-align:right;"><span style="font-size:12px;">${total}</span></td>
+                        </tr>`;
+                });
+            }
+
+            // 2. Inject Data into Template
+            // Note: I added {{StoreName}} to the template as it was missing in the snippet but usually required.
+            // If the user's snippet "SỐ CT: {{SoChungTu}}" was intentional, we can map that, but we don't have receipt number in `data` yet, using Date/Store for context.
+            // I'll map what we have.
+            let dateStr = '';
+            if (data.date) {
+                const d = new Date(data.date);
+                if (!isNaN(d.getTime())) {
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const hours = String(d.getHours()).padStart(2, '0');
+                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                    dateStr = `${day}-${month}-${year} ${hours}:${minutes}`;
+                } else {
+                    dateStr = data.date;
+                }
+            } else {
+                const d = new Date();
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                dateStr = `${day}-${month}-${year} ${hours}:${minutes}`;
+            }
+
+            let filledHtml = htmlTemplate
+                .replace('{{StoreName}}', data.storeName || '')
+                .replace('{{SoChungTu}}', data.orderCode || '')
+                .replace('{{thoigian}}', dateStr)
+                .replace('{{tenNhanVien}}', data.employee || '')
+                .replace('{{tongTien}}', formatCurrency(data.totalAmount || 0))
+                .replace('{{thanhToan}}', data.paymentMethod || 'Cash')
+                .replace('{{Rows}}', rowsHtml);
+
+            // 3. Parse HTML to Blueprint using DrawPDF
+            const blueprintRoot = {
+                 "pageSize": {
+                     "width": 80, 
+                     "height": 297, // Auto height isn't really thing in these libs usually, so 297 or long enough
+                     "unit": "mm"
+                 },
+                 "margins": {
+                     "top": 5, 
+                     "bottom": 5,
+                     "left": 5,
+                     "right": 5
+                 },
+            };
+
+            // Use the library's parseHtml method as user requested
+            const templateBlueprint = window.DrawPDF.default.parseHtml(filledHtml);
+            
+            const blueprint = {
+                ...templateBlueprint,
+                ...blueprintRoot,
+            };
+
+            const pdf = new window.DrawPDF.default();
+            pdf.setData(blueprint);
+            // // Render
+            // // Note: render(data) is typically for when the blueprint contains variables {{key}}. 
+            // // Since we pre-filled the HTML, the blueprint now contains static text. 
+            // // Passing empty data object or the original data shouldn't hurt, but the variable replacement happened in HTML stage.
+            // const dataUrl = await pdf.render({}); 
+            
+            // Open PDF
+            const blobUrl = URL.createObjectURL(pdf.getBlob());
+            window.open(blobUrl, "_blank");
+
+        } catch (error) {
+            console.error("PDF Generation Error (DrawPDF):", error);
+            alert("Lỗi tạo PDF hóa đơn: " + error.message);
+        }
+    };
+</script>

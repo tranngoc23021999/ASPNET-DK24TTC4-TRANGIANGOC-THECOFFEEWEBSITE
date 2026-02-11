@@ -12,6 +12,7 @@ public class Product
     public string? ImageUrl { get; set; }
     public string? Category { get; set; }  // Coffee, Tea, Juice, Food...
     public int StockQuantity { get; set; } = 0;  // Tồn kho đơn giản
+    public bool AllowNegativeStock { get; set; } = false; // Cho phép bán âm kho
     public string? Unit { get; set; } = "Ly";  // Đơn vị: Ly, Phần, Gói...
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -27,4 +28,5 @@ public class Product
     // Navigation
     public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
     public ICollection<WarehouseReceiptDetail> WarehouseReceiptDetails { get; set; } = new List<WarehouseReceiptDetail>();
+    public ICollection<ProductStore> ProductStores { get; set; } = new List<ProductStore>();
 }

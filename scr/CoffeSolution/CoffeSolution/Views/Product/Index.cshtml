@@ -1,4 +1,4 @@
-@model IEnumerable<CoffeSolution.Models.Entities.Product>
+@model IEnumerable<CoffeSolution.ViewModels.ProductViewModel>
 @{
     ViewData["Title"] = "Quản lý sản phẩm";
 }
@@ -97,13 +97,13 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (product.Store != null)
+                                    @if (product.StoreId.HasValue)
                                     {
-                                        <span class="badge bg-info">@product.Store.Name</span>
+                                        <span class="badge bg-info">@product.StoreName</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-primary">Hệ thống</span>
+                                        <span class="badge bg-primary">@product.StoreName</span>
                                     }
                                 </td>
                                 <td>

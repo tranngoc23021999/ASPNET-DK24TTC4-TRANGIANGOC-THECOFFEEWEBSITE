@@ -29,3 +29,62 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* =========================================
+   Global Print Styles (Thermal Receipt)
+   ========================================= */
+@media print {
+    /* Hide all main UI elements by default */
+    body > * {
+        display: none !important;
+    }
+
+    /* Hide specific Admin/POS UI components to be safe */
+    .sidebar, .navbar, .page-header, .card, .btn, .footer, 
+    .pos-container, .pos-status-bar, .modal-backdrop, .modal,
+    .main-content, .top-header {
+        display: none !important;
+    }
+
+    /* Reset root container constraints for printing */
+    html, body {
+        height: auto !important;
+        overflow: visible !important;
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    /* Force the receipt container to be visible */
+    #invoice-pos {
+        display: block !important;
+        visibility: visible !important;
+        width: 100%;
+        max-width: 80mm; /* Standard thermal paper width constraint */
+        margin: 0;
+        padding: 5px;
+        background: white;
+        color: black;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+    
+    #invoice-pos * {
+        visibility: visible !important;
+        color: black !important;
+    }
+
+    /* Ensure specific wrappers don't hide the receipt */
+    #app {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    @page {
+        size: auto;
+        margin: 0;
+    }
+}

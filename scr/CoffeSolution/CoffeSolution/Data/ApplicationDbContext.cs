@@ -30,6 +30,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Customer> Customers { get; set; }
     public DbSet<WarehouseReceipt> WarehouseReceipts => Set<WarehouseReceipt>();
     public DbSet<WarehouseReceiptDetail> WarehouseReceiptDetails => Set<WarehouseReceiptDetail>();
+    public DbSet<ProductStore> ProductStores => Set<ProductStore>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -264,5 +265,26 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<WarehouseReceiptDetail>()
             .Property(wrd => wrd.Amount)
             .HasPrecision(18, 2);
+
+        // ===============================
+        // INVENTORY (PRODUCT STORE)
+        // ===============================
+        
+        // ProductStore: Product ↔ Store (Many-to-Many with payload)
+        // Đây chính là bảng Inventory
+        modelBuilder.Entity<ProductStore>()
+            .HasKey(ps => new { ps.ProductId, ps.StoreId }); // Composite Key
+
+        modelBuilder.Entity<ProductStore>()
+            .HasOne(ps => ps.Product)
+            .WithMany(p => p.ProductStores)
+            .HasForeignKey(ps => ps.ProductId)
+            .OnDelete(DeleteBehavior.Restrict); // Xóa Product thì phải check tồn kho, hoặc Cascade tùy logic
+
+        modelBuilder.Entity<ProductStore>()
+            .HasOne(ps => ps.Store)
+            .WithMany(s => s.ProductStores)
+            .HasForeignKey(ps => ps.StoreId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

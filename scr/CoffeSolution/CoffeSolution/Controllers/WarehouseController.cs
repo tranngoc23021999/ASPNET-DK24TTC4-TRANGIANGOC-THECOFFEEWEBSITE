@@ -128,12 +128,24 @@ public class WarehouseController : BaseController
             };
             _context.WarehouseReceiptDetails.Add(detail);
 
-            // Cập nhật tồn kho
-            var product = await _context.Products.FindAsync(item.ProductId);
-            if (product != null)
+            // Cập nhật tồn kho (ProductStore)
+            var productStore = await _context.ProductStores
+                .FirstOrDefaultAsync(ps => ps.ProductId == item.ProductId && ps.StoreId == storeId);
+
+            if (productStore == null)
             {
-                product.StockQuantity += item.Quantity;
+                productStore = new ProductStore
+                {
+                    ProductId = item.ProductId,
+                    StoreId = storeId,
+                    Quantity = 0,
+                    LastUpdated = DateTime.Now
+                };
+                _context.ProductStores.Add(productStore);
             }
+
+            productStore.Quantity += item.Quantity;
+            productStore.LastUpdated = DateTime.Now;
         }
 
         await _context.SaveChangesAsync();
@@ -157,24 +169,37 @@ public class WarehouseController : BaseController
         // Nếu xóa phiếu nhập -> Tồn kho giảm -> Nếu tồn kho < lượng nhập -> Âm kho -> Chặn
         foreach (var detail in receipt.Details)
         {
-            var product = await _context.Products.FindAsync(detail.ProductId);
-            if (product != null)
+            var productStore = await _context.ProductStores
+                .FirstOrDefaultAsync(ps => ps.ProductId == detail.ProductId && ps.StoreId == receipt.StoreId);
+
+            if (productStore != null)
             {
-                if (product.StockQuantity < detail.Quantity)
-                {
-                    TempData[TempDataKey.Error] = $"Không thể xóa phiếu nhập! Sản phẩm '{product.Name}' đã được bán/xuất, không đủ tồn kho để hoàn tác.";
-                    return RedirectToAction(nameof(Index));
-                }
+                 if (productStore.Quantity < detail.Quantity)
+                 {
+                      var product = await _context.Products.FindAsync(detail.ProductId);
+                      TempData[TempDataKey.Error] = $"Không thể xóa phiếu nhập! Sản phẩm '{product?.Name ?? "Unknown"}' tại cửa hàng '{receipt.Store.Name}' đã được bán/xuất, không đủ tồn kho để hoàn tác.";
+                      return RedirectToAction(nameof(Index));
+                 }
+            }
+            else
+            {
+                 // Should not happen if data consistency is maintained
+                 // But if record is missing, treating as 0 stock
+                 TempData[TempDataKey.Error] = "Lỗi dữ liệu tồn kho!";
+                 return RedirectToAction(nameof(Index));
             }
         }
 
         // Hoàn lại tồn kho
         foreach (var detail in receipt.Details)
         {
-            var product = await _context.Products.FindAsync(detail.ProductId);
-            if (product != null)
+            var productStore = await _context.ProductStores
+                .FirstOrDefaultAsync(ps => ps.ProductId == detail.ProductId && ps.StoreId == receipt.StoreId);
+
+            if (productStore != null)
             {
-                product.StockQuantity -= detail.Quantity;
+                productStore.Quantity -= detail.Quantity;
+                productStore.LastUpdated = DateTime.Now;
             }
         }
 
@@ -200,7 +225,17 @@ public class WarehouseController : BaseController
                 p.IsSystem || // System Global
                 (p.StoreId == null && p.CreatedById == store.OwnerId) // Owner Global
             )
-            .Select(p => new { p.Id, p.Name, p.Price, p.StockQuantity })
+            .Select(p => new 
+            { 
+                p.Id, 
+                p.Name, 
+                p.Price, 
+                // Lấy tồn kho của cửa hàng này
+                StockQuantity = p.ProductStores
+                    .Where(ps => ps.StoreId == storeId)
+                    .Select(ps => ps.Quantity)
+                    .FirstOrDefault() // Default 0 if null
+            })
             .ToListAsync();
 
         return Json(products);

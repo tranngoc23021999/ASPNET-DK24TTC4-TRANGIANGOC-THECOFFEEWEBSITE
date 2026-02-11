@@ -233,6 +233,9 @@ namespace CoffeSolution.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("AllowNegativeStock")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Category")
                         .HasColumnType("nvarchar(max)");
 
@@ -276,6 +279,30 @@ namespace CoffeSolution.Migrations
                     b.HasIndex("StoreId");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("CoffeSolution.Models.Entities.ProductStore", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProductId", "StoreId");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("ProductStores");
                 });
 
             modelBuilder.Entity("CoffeSolution.Models.Entities.Role", b =>
@@ -674,6 +701,25 @@ namespace CoffeSolution.Migrations
                     b.Navigation("Store");
                 });
 
+            modelBuilder.Entity("CoffeSolution.Models.Entities.ProductStore", b =>
+                {
+                    b.HasOne("CoffeSolution.Models.Entities.Product", "Product")
+                        .WithMany("ProductStores")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoffeSolution.Models.Entities.Store", "Store")
+                        .WithMany("ProductStores")
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Store");
+                });
+
             modelBuilder.Entity("CoffeSolution.Models.Entities.RoleMenuPermission", b =>
                 {
                     b.HasOne("CoffeSolution.Models.Entities.MenuAction", "MenuAction")
@@ -836,6 +882,8 @@ namespace CoffeSolution.Migrations
                 {
                     b.Navigation("OrderDetails");
 
+                    b.Navigation("ProductStores");
+
                     b.Navigation("WarehouseReceiptDetails");
                 });
 
@@ -851,6 +899,8 @@ namespace CoffeSolution.Migrations
                     b.Navigation("Customers");
 
                     b.Navigation("Orders");
+
+                    b.Navigation("ProductStores");
 
                     b.Navigation("Products");
 

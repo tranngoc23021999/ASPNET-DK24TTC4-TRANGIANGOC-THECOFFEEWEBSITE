@@ -6,7 +6,7 @@
 <div class="page-header">
     <h1>Chi tiết đơn hàng</h1>
     <div class="page-actions">
-        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+        <button type="button" class="btn btn-outline-secondary" onclick="printOrder(@Model.Id)">
             <i class="bi bi-printer"></i> In đơn
         </button>
         <a asp-action="Index" class="btn btn-outline-secondary">
@@ -148,17 +148,49 @@
 
 @Html.AntiForgeryToken()
 
+}
+
 @section Scripts {
+    <partial name="_ReceiptPrinterScript" />
     <script>
         function updateStatus(orderId, status) {
-            const message = status === 'Completed' ? 'hoàn thành' : 'hủy';
-            if (confirm(`Bạn có chắc muốn ${message} đơn hàng này?`)) {
+            const message = status === 'Completed' ? 'hoàn thành' : (status === 'Cancelled' ? 'hủy' : 'cập nhật');
+            // Fix confirm message logic or keep simple
+             if (confirm(`Bạn có chắc muốn cập nhật trạng thái đơn hàng này?`)) {
+                 // ... existing fetch ...
                 fetch(`/Order/UpdateStatus/${orderId}?status=${status}`, {
                     method: 'POST',
                     headers: {
                         'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
                     }
                 }).then(r => r.ok ? location.reload() : alert('Lỗi khi cập nhật'));
+            }
+        }
+
+        async function printOrder(orderId) {
+            try {
+                const response = await fetch(`/api/OrderApi/${orderId}`);
+                if (!response.ok) throw new Error("Không thể tải thông tin đơn hàng");
+                const order = (await response.json()).data;
+                debugger
+                const printData = {
+                    storeName: order.storeName || "Coffee Shop",
+                    date: order.createdAt,
+                    orderCode: order.orderCode,
+                    employee: order.staffName || 'N/A', // Api might return staffName or staff object
+                    items: order.items.map(item => ({
+                        productName: item.productName,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice, 
+                        total: item.amount // Ensure API returns 'amount' or calculate it
+                    })),
+                    totalAmount: order.totalAmount,
+                    paymentMethod: order.paymentMethod
+                };
+
+                await generateThermalReceipt(printData);
+            } catch (error) {
+                alert("Lỗi in hóa đơn: " + error.message);
             }
         }
     </script>

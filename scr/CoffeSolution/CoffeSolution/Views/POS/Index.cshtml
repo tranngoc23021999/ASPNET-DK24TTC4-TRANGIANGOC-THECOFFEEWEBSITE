@@ -1,37 +1,681 @@
 @{
     Layout = "_LayoutPOS";
     ViewData["Title"] = "Bán hàng";
+    var storeId = ViewBag.StoreId;
+    var storeName = ViewBag.StoreName;
 }
 
-<div id="app" class="pos-container">
-    <div class="d-flex justify-content-center align-items-center vh-100">
-        <div class="text-center">
-            <div class="spinner-border text-primary mb-3" role="status">
-                <span class="visually-hidden">Loading...</span>
+<div id="app">
+    <div class="pos-container">
+    <div class="pos-content">
+        <!-- Left Panel: Products -->
+        <div class="pos-left-panel col-md-8 col-lg-8 d-flex flex-column">
+            <!-- Header: Search & Categories -->
+            <div class="mb-3">
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm sản phẩm..." v-model="searchQuery">
+                </div>
+
+                <div class="category-pills" v-if="categories.length > 0">
+                    <div class="category-pill" 
+                         :class="{ active: selectedCategory === '' }" 
+                         @@click="selectedCategory = ''">
+                        Tất cả
+                    </div>
+                    <div class="category-pill" 
+                         v-for="cat in categories" 
+                         :key="cat"
+                         :class="{ active: selectedCategory === cat }"
+                         @@click="selectedCategory = cat">
+                        {{ cat }}
+                    </div>
+                </div>
             </div>
-            <h4 class="fw-normal">Đang tải POS...</h4>
-            <p class="text-muted">Vui lòng chờ trong giây lát</p>
-            <a href="/" class="btn btn-outline-secondary mt-3">
-                <i class="bi bi-arrow-left"></i> Quay về Dashboard
-            </a>
+
+            <!-- Product Grid -->
+            <div class="flex-grow-1 overflow-auto">
+                <div v-if="isLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <div v-else-if="filteredProducts.length === 0" class="text-center py-5 text-muted">
+                    <i class="bi bi-bag-x" style="font-size: 3rem;"></i>
+                    <p class="mt-2">Không tìm thấy sản phẩm nào</p>
+                </div>
+
+                <div v-else class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                    <div class="col" v-for="product in filteredProducts" :key="product.id">
+                        <div class="card h-100 product-card border-0 shadow-sm" @@click="addToCart(product)">
+                            <div class="product-img-wrapper rounded-top">
+                                <img v-if="product.imageUrl" :src="product.imageUrl" class="card-img-top product-img" :alt="product.name">
+                                <div v-else class="text-muted d-flex align-items-center justify-content-center h-100 bg-light w-100">
+                                    <i class="bi bi-image" style="font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                            <div class="card-body p-2 d-flex flex-column">
+                                <h6 class="card-title product-name mb-1" :title="product.name">
+                                    {{ product.name }}
+                                    <span v-if="product.storeId !== storeId" class="badge bg-warning text-dark ms-1" style="font-size: 0.7em;">
+                                        {{ product.storeName }}
+                                    </span>
+                                </h6>
+                                <div class="mt-auto d-flex justify-content-between align-items-center">
+                                    <span class="text-primary fw-bold">{{ formatPrice(product.price) }}</span>
+                                    <small class="text-muted" v-if="product.stockQuantity > 0">SL: {{ product.stockQuantity }}</small>
+                                    <span class="badge bg-danger" v-else>Hết hàng</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Cart & Checkout -->
+        <div class="pos-right-panel col-md-4 col-lg-4 border-start">
+            <!-- Customer Selection -->
+            <div class="p-3 border-bottom bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-person-badge me-2"></i>Khách hàng</h6>
+                    <button class="btn btn-sm btn-outline-primary" @@click="showCustomerModal" title="Thêm khách hàng mới">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="position-relative" v-if="!selectedCustomer">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Tìm khách hàng (SĐT/Tên)..."
+                               v-model="customerQuery" @@input="searchCustomer">
+                    </div>
+                    
+                    <!-- Search Results Dropdown -->
+                    <ul class="list-group position-absolute w-100 shadow mt-1" style="z-index: 1050; max-height: 200px; overflow-y: auto;" v-if="customerResults.length > 0">
+                        <li class="list-group-item list-group-item-action cursor-pointer" 
+                            v-for="customer in customerResults" :key="customer.id"
+                            @@click="selectCustomer(customer)">
+                            <div class="fw-bold">{{ customer.name }}</div>
+                            <small class="text-muted">{{ customer.phone }}</small>
+                        </li>
+                    </ul>
+                </div>
+
+                <div v-else class="selected-customer-card d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-primary">{{ selectedCustomer.name }}</div>
+                        <small class="text-muted">{{ selectedCustomer.phone }}</small>
+                    </div>
+                    <button class="btn btn-sm btn-link text-danger p-0" @@click="removeCustomer">
+                        <i class="bi bi-x-circle-fill fs-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cart Items -->
+            <div class="flex-grow-1 overflow-auto bg-light">
+                <div v-if="cart.length === 0" class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                    <i class="bi bi-cart3 fs-1 mb-2"></i>
+                    <p>Chưa có sản phẩm nào</p>
+                </div>
+                
+                <ul class="list-group list-group-flush" v-else>
+                    <li class="list-group-item d-flex gap-2 align-items-center py-3" v-for="(item, index) in cart" :key="index">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-truncate" style="max-width: 180px;">{{ item.product.name }}</div>
+                            <div class="text-muted small">{{ formatPrice(item.product.price) }}</div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center bg-white border rounded">
+                            <button class="btn btn-sm btn-link text-dark py-0" @@click="updateQuantity(index, -1)">
+                                <i class="bi bi-dash"></i>
+                            </button>
+                            <input type="number" class="form-control form-control-sm border-0 text-center p-0" 
+                                   style="width: 30px; background: transparent;" 
+                                   v-model.number="item.quantity" min="1" readonly>
+                            <button class="btn btn-sm btn-link text-dark py-0" @@click="updateQuantity(index, 1)">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+
+                        <div class="text-end fw-bold text-primary" style="min-width: 70px;">
+                            {{ formatPrice(item.product.price * item.quantity) }}
+                        </div>
+                        
+                        <button class="btn btn-sm text-danger ms-1 p-0" @@click="removeFromCart(index)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-white p-3 border-top shadow-sm">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Tổng số lượng:</span>
+                    <span class="fw-bold">{{ cartItemCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="fs-5 fw-bold">Tổng tiền:</span>
+                    <span class="fs-4 fw-bold text-danger">{{ formatPrice(totalAmount) }}</span>
+                </div>
+                
+                <div class="mb-3">
+                     <label class="form-label small text-muted mb-1">Phương thức thanh toán</label>
+                     <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="payment" id="pay-cash" value="Cash" v-model="paymentMethod" checked>
+                        <label class="btn btn-outline-secondary btn-sm" for="pay-cash"><i class="bi bi-cash me-1"></i>Tiền mặt</label>
+
+                        <input type="radio" class="btn-check" name="payment" id="pay-qr" value="Transfer" v-model="paymentMethod">
+                        <label class="btn btn-outline-secondary btn-sm" for="pay-qr"><i class="bi bi-qr-code me-1"></i>CK/QR</label>
+                     </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary flex-grow-1" @@click="showOrderHistory">
+                        <i class="bi bi-clock-history me-1"></i> In Bill
+                    </button>
+                    <button class="btn btn-primary flex-grow-1 fw-bold" :disabled="cart.length === 0 || isProcessing" @@click="checkout">
+                        <span v-if="isProcessing" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <i class="bi bi-receipt me-2" v-if="!isProcessing"></i>
+                        THANH TOÁN
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status Bar -->
+    <div class="pos-status-bar">
+        <div class="d-flex">
+            <div class="pos-status-item">
+                <i class="bi bi-shop pos-status-icon"></i>
+                <span>@ViewBag.StoreName</span>
+            </div>
+            <div class="pos-status-item">
+                <i class="bi bi-person-circle pos-status-icon"></i>
+                <span>@ViewBag.EmployeeName</span>
+            </div>
+        </div>
+        
+        <div class="d-flex">
+            <div class="pos-status-item dropdown">
+                <a class="text-white text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-tools me-1"></i> Công cụ
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-repeat me-2"></i>Đồng bộ dữ liệu</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Cấu hình máy in</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="/"><i class="bi bi-box-arrow-right me-2"></i>Thoát POS</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- Checkout Confirmation Modal -->
+    <div class="modal fade" id="checkoutModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận thanh toán</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn thanh toán đơn hàng này?</p>
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>Tổng tiền:</span>
+                        <span class="text-danger">{{ formatPrice(totalAmount) }}</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" @@click="processCheckout">Thanh toán</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Success Modal -->
+    <div class="modal fade" id="orderSuccessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center">
+                <div class="modal-body py-5">
+                    <div class="mb-3 text-success">
+                        <i class="bi bi-check-circle-fill" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="modal-title mb-3">Thanh toán thành công!</h4>
+                    <p class="mb-4">Mã đơn hàng: <strong class="fs-5">{{ lastOrder?.orderCode }}</strong></p>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-2"></i>Đóng
+                        </button>
+                        <button type="button" class="btn btn-primary px-4" @@click="printBill(lastOrder)">
+                            <i class="bi bi-printer-fill me-2"></i>In Hóa Đơn
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Order History Modal -->
+    <div class="modal fade" id="orderHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Lịch sử đơn hàng gần đây</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div v-if="isLoadingHistory" class="text-center py-5">
+                       <div class="spinner-border text-primary" role="status">
+                           <span class="visually-hidden">Loading...</span>
+                       </div>
+                    </div>
+                    <div v-else-if="recentOrders.length === 0" class="text-center py-5 text-muted">
+                        <p>Chưa có đơn hàng nào trong phiên này.</p>
+                    </div>
+                    <div v-else class="list-group list-group-flush">
+                        <div v-for="order in recentOrders" :key="order.id" class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold">{{ order.orderCode }} <span class="badge bg-success ms-2">{{ order.status }}</span></div>
+                                <div class="small text-muted">
+                                    {{ new Date(order.createdAt).toLocaleString('vi-VN') }} - 
+                                    <span class="fw-bold text-dark">{{ formatPrice(order.totalAmount) }}</span>
+                                    <span class="ms-2">({{ order.paymentMethod }})</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" @@click="reprintOrder(order.id)">
+                                <i class="bi bi-printer me-1"></i> In lại
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <div>
+                         <button type="button" class="btn btn-outline-secondary" @@click="printProvisional" :disabled="cart.length === 0">
+                            <i class="bi bi-printer me-1"></i> In Tạm Tính ({{ cartItemCount }} món)
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<!-- Printable Receipt (Hidden on Screen) -->
+<div id="invoice-pos" style="display: none;">
+    <div class="invoice-header text-center mb-3">
+        <h4 class="fw-bold">COFFEE SHOP</h4>
+        <div class="small">{{ storeName }}</div>
+        <div class="small">{{ new Date().toLocaleString('vi-VN') }}</div>
+        <div class="small">NV: {{ employeeName }}</div>
+    </div>
+    
+    <div class="invoice-body mb-3">
+        <table class="table table-sm table-borderless mb-0">
+            <thead>
+                <tr class="border-bottom border-dark">
+                    <th class="text-start">Món</th>
+                    <th class="text-center">SL</th>
+                    <th class="text-end">T.Tiền</th>
+                </tr>
+            </thead>
+            <tbody v-if="printOrder">
+                <tr v-for="(item, index) in printOrder.items" :key="index">
+                    <td class="text-start">{{ item.productName || item.product.name }}</td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-end">{{ formatPrice(item.total || (item.quantity * item.product.price)) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="invoice-footer border-top border-dark pt-2">
+        <div class="d-flex justify-content-between fw-bold">
+            <span>Tổng cộng:</span>
+            <span>{{ formatPrice(printOrder?.totalAmount || totalAmount) }}</span>
+        </div>
+        <div class="d-flex justify-content-between small">
+            <span>Thanh toán:</span>
+            <span>{{ printOrder?.paymentMethod || paymentMethod }}</span>
+        </div>
+        <div class="text-center mt-3 fst-italic small">
+            Cảm ơn & Hẹn gặp lại!
         </div>
     </div>
 </div>
 
 @section Scripts {
+
+
+    <partial name="_ReceiptPrinterScript" />
     <script type="module">
-        // Vue.js app will be initialized here in the future
-        // For now, it stays as a placeholder
         const { createApp } = Vue
-        
+
+
         createApp({
             data() {
                 return {
-                    message: 'Hello Vue!'
+                    storeId: @storeId,
+                    storeName: '@Html.Raw(ViewBag.StoreName)',
+                    employeeName: '@Html.Raw(ViewBag.EmployeeName)',
+                    products: [],
+                    categories: [],
+                    isLoading: true,
+                    isProcessing: false,
+                    searchQuery: '',
+                    selectedCategory: '',
+                    
+                    cart: [],
+                    
+                    customerQuery: '',
+                    customerResults: [],
+                    selectedCustomer: null,
+                    showCustomerDropdown: false,
+                    
+                    paymentMethod: 'Cash',
+                    orderNote: '',
+                    
+                    checkoutModal: null,
+                    successModal: null,
+                    historyModal: null,
+                    lastOrder: null,
+                    printOrder: null,
+                    recentOrders: [],
+                    isLoadingHistory: false
+                }
+            },
+            computed: {
+                filteredProducts() {
+                    let result = this.products;
+                    
+                    if (this.selectedCategory) {
+                        result = result.filter(p => p.category === this.selectedCategory);
+                    }
+                    
+                    if (this.searchQuery) {
+                        const query = this.searchQuery.toLowerCase();
+                        result = result.filter(p => 
+                            p.name.toLowerCase().includes(query) || 
+                            (p.code && p.code.toLowerCase().includes(query))
+                        );
+                    }
+                    
+                    // Filter active products only (already done by API but safety check)
+                    return result.filter(p => p.isActive);
+                },
+                cartItemCount() {
+                    return this.cart.reduce((sum, item) => sum + item.quantity, 0);
+                },
+                subTotal() {
+                    return this.cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+                },
+                totalAmount() {
+                    return this.subTotal;
+                }
+            },
+            methods: {
+                formatPrice(value) {
+                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+                },
+                async loadProducts() {
+                    this.isLoading = true;
+                    try {
+                        const response = await fetch(`/api/ProductApi?storeId=${this.storeId}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            this.products = data.data;
+                            // Extract categories unique
+                            const cats = [...new Set(this.products.map(p => p.category).filter(c => c))];
+                            this.categories = cats.sort();
+                        }
+                    } catch (error) {
+                        console.error('Error fetching products:', error);
+                        alert('Lỗi tải danh sách sản phẩm');
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+                addToCart(product) {
+                    if (product.stockQuantity <= 0 && !product.allowNegativeStock) {
+                        alert('Sản phẩm đã hết hàng');
+                        return;
+                    }
+
+                    const existingItem = this.cart.find(item => item.product.id === product.id);
+                    if (existingItem) {
+                        if (existingItem.quantity < product.stockQuantity || product.allowNegativeStock) {
+                            existingItem.quantity++;
+                        } else {
+                            alert('Đã đạt giới hạn tồn kho');
+                        }
+                    } else {
+                        this.cart.push({
+                            product: product,
+                            quantity: 1,
+                            note: ''
+                        });
+                    }
+                },
+                removeFromCart(index) {
+                    this.cart.splice(index, 1);
+                },
+                updateQuantity(index, delta) {
+                    const item = this.cart[index];
+                    const newQty = item.quantity + delta;
+                    
+                    if (newQty <= 0) {
+                        this.removeFromCart(index);
+                        return;
+                    }
+                    
+                    if (newQty > item.product.stockQuantity && !item.product.allowNegativeStock) {
+                         alert('Không đủ tồn kho');
+                         return;
+                    }
+                    
+                    item.quantity = newQty;
+                },
+                
+                async searchCustomer() {
+                    if (!this.customerQuery || this.customerQuery.length < 2) {
+                        this.customerResults = [];
+                        return;
+                    }
+                    
+                    // Simple debounce could be added here
+                    try {
+                        const response = await fetch(`/api/CustomerApi/search?query=${encodeURIComponent(this.customerQuery)}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            this.customerResults = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error searching customer:', error);
+                    }
+                },
+                selectCustomer(customer) {
+                    this.selectedCustomer = customer;
+                    this.customerQuery = '';
+                    this.customerResults = [];
+                },
+                removeCustomer() {
+                    this.selectedCustomer = null;
+                },
+                showCustomerModal() {
+                    if(confirm("Chuyển đến trang thêm khách hàng trong tab mới?")) {
+                         window.open('/Customer/Create', '_blank');
+                    }
+                },
+                
+                checkout() {
+                    if (this.cart.length === 0) return;
+                    this.checkoutModal.show();
+                },
+
+                async processCheckout() {
+                    this.checkoutModal.hide();
+                    this.isProcessing = true;
+                    try {
+                        const orderData = {
+                            storeId: this.storeId,
+                            customerId: this.selectedCustomer ? this.selectedCustomer.id : null,
+                            paymentMethod: this.paymentMethod,
+                            items: this.cart.map(item => ({
+                                productId: item.product.id,
+                                quantity: item.quantity,
+                                price: item.product.price
+                            }))
+                        };
+
+                        const response = await fetch('/api/OrderApi/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(orderData)
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            this.lastOrder = result.data;
+                            // Save items for printing since API doesn't return them in this lightweight response
+                            this.lastOrder.items = JSON.parse(JSON.stringify(this.cart.map(item => ({
+                                productName: item.product.name,
+                                unitPrice: item.product.price,
+                                quantity: item.quantity,
+                                total: item.product.price * item.quantity
+                            }))));
+                            
+                            // Success Actions
+                            this.cart = [];
+                            this.selectedCustomer = null;
+                            this.customerQuery = '';
+                            this.paymentMethod = 'Cash';
+                            
+                            this.successModal.show();
+                            this.loadProducts();
+                        } else {
+                            alert('Lỗi: ' + result.message);
+                        }
+                    } catch (error) {
+                        console.error('Error during checkout:', error);
+                        alert('Đã xảy ra lỗi khi thanh toán');
+                    } finally {
+                        this.isProcessing = false;
+                    }
+                },
+
+                showOrderHistory() {
+                   this.historyModal.show();
+                   this.loadRecentOrders();
+                },
+
+                async loadRecentOrders() {
+                    this.isLoadingHistory = true;
+                    try {
+                        const response = await fetch(`/api/OrderApi/recent?storeId=${this.storeId}`);
+                        const result = await response.json();
+                        if (result.success) {
+                             this.recentOrders = result.data;
+                        }
+                    } catch (error) {
+                        console.error("Error loading history:", error);
+                    } finally {
+                        this.isLoadingHistory = false;
+                    }
+                },
+
+                printProvisional() {
+                    this.historyModal.hide();
+                    this.printBill(null); // Print current cart
+                },
+
+                async reprintOrder(orderId) {
+                    try {
+                        const response = await fetch(`/api/OrderApi/${orderId}`);
+                        const result = await response.json();
+                        if (result.success) {
+                            const order = result.data;
+                            // Map to print format
+                            order.items = order.items.map(i => ({
+                                productName: i.productName,
+                                quantity: i.quantity,
+                                total: i.amount, 
+                                unitPrice: i.unitPrice,
+                            }));
+                            
+                            this.historyModal.hide();
+                            this.printBill(order);
+                        }
+                    } catch(e) {
+                         alert("Lỗi tải thông tin đơn hàng");
+                    }
+                },
+            
+                async printBill(order = null) {
+                    // Prepare data for DrawPDF
+                    const printData = {
+                        storeName: this.storeName,
+                        date: new Date().toLocaleString('vi-VN'),
+                        employee: this.employeeName,
+                        items: [],
+                        totalAmount: 0,
+                        paymentMethod: '',
+                        orderCode: null
+                    };
+
+                    if (order) {
+                        // Reprinting existing order
+                        printData.date = new Date(order.createdAt || new Date()).toLocaleString('vi-VN');
+                        printData.employee = order.staffName || this.employeeName; // Or get from order
+                        printData.items = order.items; // Already standardized logic in reprintOrder or processCheckout?
+                        // Verify item structure
+                        if (!printData.items) printData.items = [];
+                        
+                        // We need to ensure items have consistant structure. 
+                        // The user's reprintOrder logic in previous turn mapped it: productName, quantity, total.
+                        // processCheckout mapped it: productName, unitPrice, quantity, total.
+                        
+                        printData.totalAmount = order.totalAmount;
+                        printData.paymentMethod = order.paymentMethod;
+                        printData.orderCode = order.orderCode;
+                    } else {
+                        // Printing current cart (Provisional or new order)
+                        printData.items = this.cart.map(item => ({
+                            productName: item.product.name,
+                            quantity: item.quantity,
+                            unitPrice: item.product.price,
+                            total: item.product.price * item.quantity
+                        }));
+                        printData.totalAmount = this.totalAmount;
+                        printData.paymentMethod = this.paymentMethod;
+                    }
+
+                    // Call the global helper function (or define it in methods if preferred, but user passed it as separate script)
+                    // Since I put generateThermalReceipt in the global scope (outside createApp), I can call it directly.
+                    // But waiting, I put it inside <script type="module"> but outside createApp. It's in module scope, not global window scope?
+                    // Ah, `generateThermalReceipt` is defined in the same module scope as createApp. So `this` context won't find it unless I attach it or call it directly.
+                    // Since I am inside `methods`, I can call `generateThermalReceipt(printData)` if it's visible. 
+                    // Yes, it is in the same scope.
+
+                    await generateThermalReceipt(printData);
                 }
             },
             mounted() {
-                console.log('POS App Mounted');
+                this.loadProducts();
+                this.checkoutModal = new bootstrap.Modal(document.getElementById('checkoutModal'));
+                this.successModal = new bootstrap.Modal(document.getElementById('orderSuccessModal'));
+                this.historyModal = new bootstrap.Modal(document.getElementById('orderHistoryModal'));
             }
         }).mount('#app')
     </script>

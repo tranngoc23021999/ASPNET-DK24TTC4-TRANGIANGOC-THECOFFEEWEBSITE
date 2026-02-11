@@ -92,13 +92,13 @@ public class OrderController : BaseController
     public async Task<IActionResult> Create()
     {
         ViewBag.Stores = await GetStoreSelectListAsync();
-        return View(new OrderViewModel());
+        return View(new OrderPosViewModel());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Permission(_menuId, ActionCode.Create)]
-    public async Task<IActionResult> Create(OrderViewModel model)
+    public async Task<IActionResult> Create(OrderPosViewModel model)
     {
         if (!ModelState.IsValid)
         {

@@ -40,8 +40,36 @@ public class ProductApiController : ControllerBase
         if (!hasPermission)
             return Forbid();
 
+        // Lấy danh sách Store mà user có quyền truy cập (Là Owner hoặc Staff)
+        var userStoreIds = await _context.UserStores
+            .Where(us => us.UserId == userId)
+            .Select(us => us.StoreId)
+            .ToListAsync();
+
+        var ownedStoreIds = await _context.Stores
+            .Where(s => s.OwnerId == userId)
+            .Select(s => s.Id)
+            .ToListAsync();
+        
+        var allowedStoreIds = userStoreIds.Union(ownedStoreIds).ToList();
+
+        // Lấy danh sách Owner của các store này để check hàng Global
+        var ownerIds = await _context.Stores
+            .Where(s => allowedStoreIds.Contains(s.Id))
+            .Select(s => s.OwnerId)
+            .Distinct()
+            .ToListAsync();
+        
+        // Nếu user là Admin/Owner thì thêm chính mình vào logic check
+        if (!ownerIds.Contains(userId.Value)) ownerIds.Add(userId.Value);
+
         var query = _context.Products
-            .Where(p => p.StoreId == storeId);
+            .Where(p => 
+                p.StoreId == storeId || 
+                (p.StoreId != null && allowedStoreIds.Contains(p.StoreId.Value)) ||
+                (p.StoreId == null && p.CreatedById != null && ownerIds.Contains(p.CreatedById.Value)) ||
+                (p.IsSystem == true && p.StoreId == null)
+            );
 
         if (activeOnly)
             query = query.Where(p => p.IsActive);
@@ -50,6 +78,8 @@ public class ProductApiController : ControllerBase
             query = query.Where(p => p.Category == category);
 
         var products = await query
+            .Include(p => p.Store) // Join with Store
+            .Include(p => p.ProductStores)
             .OrderBy(p => p.Category)
             .ThenBy(p => p.Name)
             .Select(p => new
@@ -60,9 +90,15 @@ public class ProductApiController : ControllerBase
                 p.Price,
                 p.ImageUrl,
                 p.Category,
-                p.StockQuantity,
+                StockQuantity = p.ProductStores
+                    .Where(ps => ps.StoreId == (p.StoreId ?? storeId))
+                    .Select(ps => ps.Quantity)
+                    .FirstOrDefault(),
                 p.Unit,
-                p.IsActive
+                p.IsActive,
+                p.AllowNegativeStock,
+                p.StoreId,
+                StoreName = p.Store != null ? p.Store.Name : "Global" // Return Store Name or "Global"
             })
             .ToListAsync();
 
@@ -75,8 +111,39 @@ public class ProductApiController : ControllerBase
     [HttpGet("categories")]
     public async Task<IActionResult> GetCategories(int storeId)
     {
+        var userId = _authService.GetCurrentUserId();
+        var allowedStoreIds = new List<int>();
+
+        if (userId != null)
+        {
+            var userStoreIds = await _context.UserStores
+                .Where(us => us.UserId == userId)
+                .Select(us => us.StoreId)
+                .ToListAsync();
+
+            var ownedStoreIds = await _context.Stores
+                .Where(s => s.OwnerId == userId)
+                .Select(s => s.Id)
+                .ToListAsync();
+            
+            allowedStoreIds = userStoreIds.Union(ownedStoreIds).ToList();
+        }
+
+        // Lấy danh sách Owner của các store này để check hàng Global
+        var ownerIds = await _context.Stores
+            .Where(s => allowedStoreIds.Contains(s.Id))
+            .Select(s => s.OwnerId)
+            .Distinct()
+            .ToListAsync();
+        
+        if (userId != null && !ownerIds.Contains(userId.Value)) ownerIds.Add(userId.Value);
+
         var categories = await _context.Products
-            .Where(p => p.StoreId == storeId && p.IsActive && p.Category != null)
+            .Where(p => 
+                (p.StoreId == storeId || 
+                (p.StoreId != null && allowedStoreIds.Contains(p.StoreId.Value)) ||
+                (p.StoreId == null && p.CreatedById != null && ownerIds.Contains(p.CreatedById.Value))) &&
+                p.IsActive && p.Category != null)
             .Select(p => p.Category)
             .Distinct()
             .ToListAsync();

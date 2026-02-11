@@ -28,7 +28,7 @@ public class OrderApiController : ControllerBase
     /// <summary>
     /// Tạo đơn hàng mới (POS)
     /// </summary>
-    [HttpPost]
+    [HttpPost("create")]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
     {
         var userId = _authService.GetCurrentUserId();
@@ -75,8 +75,36 @@ public class OrderApiController : ControllerBase
             totalAmount += detail.Amount;
             order.OrderDetails.Add(detail);
 
-            // Giảm tồn kho
-            product.StockQuantity = Math.Max(0, product.StockQuantity - item.Quantity);
+            // Giảm tồn kho (ProductStore)
+            var productStore = await _context.ProductStores
+                .FirstOrDefaultAsync(ps => ps.ProductId == item.ProductId && ps.StoreId == request.StoreId);
+
+            if (productStore == null)
+            {
+                // Nếu chưa có record tồn kho cho store này thì tạo mới
+                productStore = new ProductStore
+                {
+                    ProductId = item.ProductId,
+                    StoreId = request.StoreId,
+                    Quantity = 0, // Mặc định 0
+                    LastUpdated = DateTime.Now
+                };
+                _context.ProductStores.Add(productStore);
+            }
+
+            if (product.AllowNegativeStock)
+            {
+                 productStore.Quantity -= item.Quantity;
+            }
+            else
+            {
+                 if (productStore.Quantity < item.Quantity)
+                 {
+                     return BadRequest(ApiResponse.Error($"Sản phẩm {product.Name} không đủ tồn kho (Còn: {productStore.Quantity})"));
+                 }
+                 productStore.Quantity -= item.Quantity;
+            }
+            productStore.LastUpdated = DateTime.Now;
         }
 
         order.TotalAmount = totalAmount;
@@ -84,13 +112,13 @@ public class OrderApiController : ControllerBase
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
 
-        return Ok(ApiResponse<object>.Ok(new
+        return Ok(ApiResponse<object>.Ok(new OrderPosViewModel
         {
-            order.Id,
-            order.OrderCode,
-            order.TotalAmount,
-            order.Status,
-            order.CreatedAt
+            Id = order.Id,
+            OrderCode = order.OrderCode,
+            TotalAmount = order.TotalAmount,
+            Status = order.Status,
+            CreatedAt = order.CreatedAt
         }, "Tạo đơn hàng thành công!"));
     }
 
@@ -162,6 +190,33 @@ public class OrderApiController : ControllerBase
 
         return Ok(ApiResponse.Ok("Cập nhật trạng thái thành công"));
     }
+    /// <summary>
+    /// Lấy danh sách đơn hàng gần đây của nhân viên tại cửa hàng
+    /// </summary>
+    [HttpGet("recent")]
+    public async Task<IActionResult> GetRecentOrders(int storeId)
+    {
+        var userId = _authService.GetCurrentUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse.Error("Chưa đăng nhập"));
+
+        var orders = await _context.Orders
+            .Where(o => o.StoreId == storeId && o.StaffId == userId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Take(20)
+            .Select(o => new
+            {
+                o.Id,
+                o.OrderCode,
+                o.TotalAmount,
+                o.Status,
+                o.CreatedAt,
+                o.PaymentMethod
+            })
+            .ToListAsync();
+
+        return Ok(ApiResponse<object>.Ok(orders));
+    }
 }
 
 public class CreateOrderRequest
@@ -176,6 +231,7 @@ public class OrderItemRequest
 {
     public int ProductId { get; set; }
     public int Quantity { get; set; }
+    public int Price { get; set; }
     public string? Note { get; set; }
 }
 

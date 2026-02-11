@@ -29,4 +29,5 @@ public class Store
     public ICollection<WarehouseReceipt> WarehouseReceipts { get; set; } = new List<WarehouseReceipt>();
     public ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
     public ICollection<Customer> Customers { get; set; } = new List<Customer>();
+    public ICollection<ProductStore> ProductStores { get; set; } = new List<ProductStore>();
 }

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "masax-drawpdf": "^2.2.1"
+  }
+}
