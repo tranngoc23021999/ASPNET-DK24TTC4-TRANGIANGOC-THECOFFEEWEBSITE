@@ -33,20 +33,24 @@ body {
 /* =========================================
    Global Print Styles (Thermal Receipt)
    ========================================= */
+/* =========================================
+   Global Print Styles (Thermal Receipt) - DEPRECATED / CONFLICTING
+   ========================================= */
+/*
 @media print {
-    /* Hide all main UI elements by default */
+    /* Hide all main UI elements by default * /
     body > * {
         display: none !important;
     }
 
-    /* Hide specific Admin/POS UI components to be safe */
+    /* Hide specific Admin/POS UI components to be safe * /
     .sidebar, .navbar, .page-header, .card, .btn, .footer, 
     .pos-container, .pos-status-bar, .modal-backdrop, .modal,
     .main-content, .top-header {
         display: none !important;
     }
 
-    /* Reset root container constraints for printing */
+    /* Reset root container constraints for printing * /
     html, body {
         height: auto !important;
         overflow: visible !important;
@@ -56,12 +60,12 @@ body {
         display: block !important;
     }
 
-    /* Force the receipt container to be visible */
+    /* Force the receipt container to be visible * /
     #invoice-pos {
         display: block !important;
         visibility: visible !important;
         width: 100%;
-        max-width: 80mm; /* Standard thermal paper width constraint */
+        max-width: 80mm; /* Standard thermal paper width constraint * /
         margin: 0;
         padding: 5px;
         background: white;
@@ -76,7 +80,7 @@ body {
         color: black !important;
     }
 
-    /* Ensure specific wrappers don't hide the receipt */
+    /* Ensure specific wrappers don't hide the receipt * /
     #app {
         display: block !important;
         height: auto !important;
@@ -88,3 +92,4 @@ body {
         margin: 0;
     }
 }
+*/
