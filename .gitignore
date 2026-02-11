@@ -1,6 +1,8 @@
 scr/CoffeSolution/CoffeSolution/obj
+scr/CoffeSolution/CoffeSolution/temp_build
 .vs/
 [Bb]in/
 [Oo]bj/
 *.user
 *.suo
+node_modules/
