@@ -33,7 +33,6 @@ public class ShiftController : Controller
         var hasPermission = await _permissionService.HasPermissionAsync(userId.Value, MenuCode.Shift, ActionCode.View);
         if (!hasPermission) return Forbid();
 
-        // Filter stores based on user role
         List<Store> allowedStores;
         if (User.IsInRole("Administrator"))
         {
@@ -44,7 +43,6 @@ public class ShiftController : Controller
         }
         else
         {
-             // Get stores assigned to user via mapping OR owned by user
              allowedStores = await _context.Stores
                 .Where(s => s.IsActive && (s.OwnerId == userId || s.UserStores.Any(us => us.UserId == userId)))
                 .OrderBy(s => s.Name)
@@ -53,7 +51,6 @@ public class ShiftController : Controller
         
         ViewBag.Stores = allowedStores;
 
-        // Default date range: Last 30 days to ensure visibility
         if (!fromDate.HasValue) fromDate = DateTime.Today.AddDays(-30);
         if (!toDate.HasValue) toDate = DateTime.Now;
 
@@ -68,7 +65,6 @@ public class ShiftController : Controller
             .Include(s => s.Store)
             .AsQueryable();
 
-        // If user is not admin, only show shifts from allowed stores
         if (!User.IsInRole("Administrator"))
         {
             var allowedStoreIds = allowedStores.Select(s => s.Id).ToList();
@@ -77,11 +73,8 @@ public class ShiftController : Controller
 
         if (storeId.HasValue)
         {
-            // If user selects a store, check if they have access (already filtered by UI, but good for security)
             if (!User.IsInRole("Administrator") && !allowedStores.Any(s => s.Id == storeId))
             {
-                 // If trying to access unauthorized store, show nothing or forbidden? 
-                 // Showing nothing is safer/simpler here within the list context
                  query = query.Where(s => false); 
             }
             else
@@ -179,7 +172,7 @@ public class ShiftController : Controller
         existingShift.StartingCash = shift.StartingCash;
         existingShift.EndingCash = shift.EndingCash;
         
-        // Recalculate difference/update note if needed? No, just save amount.
+
         
         try
         {

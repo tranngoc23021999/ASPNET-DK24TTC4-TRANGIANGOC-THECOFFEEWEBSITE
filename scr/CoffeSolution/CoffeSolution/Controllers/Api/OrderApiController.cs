@@ -42,7 +42,6 @@ public class OrderApiController : ControllerBase
         if (request.Items == null || !request.Items.Any())
             return BadRequest(ApiResponse.Error("Vui lòng thêm sản phẩm vào đơn hàng"));
 
-        // Tạo Order
         var order = new Order
         {
             OrderCode = $"ORD-{DateTime.Now:yyyyMMdd-HHmmss}",
@@ -57,7 +56,6 @@ public class OrderApiController : ControllerBase
 
         decimal totalAmount = 0;
 
-        // Thêm OrderDetails
         foreach (var item in request.Items)
         {
             var product = await _context.Products.FindAsync(item.ProductId);
@@ -76,13 +74,11 @@ public class OrderApiController : ControllerBase
             totalAmount += detail.Amount;
             order.OrderDetails.Add(detail);
 
-            // Giảm tồn kho (ProductStore)
             var productStore = await _context.ProductStores
                 .FirstOrDefaultAsync(ps => ps.ProductId == item.ProductId && ps.StoreId == request.StoreId);
 
             if (productStore == null)
             {
-                // Nếu chưa có record tồn kho cho store này thì tạo mới
                 productStore = new ProductStore
                 {
                     ProductId = item.ProductId,

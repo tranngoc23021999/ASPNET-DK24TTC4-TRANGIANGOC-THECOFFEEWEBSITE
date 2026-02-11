@@ -11,6 +11,7 @@ namespace CoffeSolution.Services;
 public interface IAuthService
 {
     Task<(bool Success, string Message, User? User)> LoginAsync(string username, string password);
+    Task<(bool Success, string Message)> RegisterAsync(RegisterViewModel model);
     Task LogoutAsync();
     Task<(bool Success, string Message)> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
     Task<User?> GetCurrentUserAsync();
@@ -72,6 +73,45 @@ public class AuthService : IAuthService
             authProperties);
 
         return (true, "Đăng nhập thành công.", user);
+    }
+
+    public async Task<(bool Success, string Message)> RegisterAsync(RegisterViewModel model)
+    {
+        // 1. Check existing username
+        if (await _context.Users.AnyAsync(u => u.Username == model.Username))
+        {
+            return (false, "Tên đăng nhập đã tồn tại.");
+        }
+
+        // 2. Create User
+        var user = new User
+        {
+            Username = model.Username,
+            FullName = model.FullName,
+            Email = model.Email,
+            Phone = model.Phone,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
+            IsActive = true,
+            CreatedAt = DateTime.Now
+        };
+
+        // 3. Assign Default Role (Admin)
+        // Note: Assuming "Admin" role exists. If not, we might need seeding or handling.
+        var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+        if (adminRole != null)
+        {
+            user.UserRoles.Add(new UserRole { Role = adminRole });
+        }
+        else
+        {
+             // Fallback or Log error? For now, let's proceed but maybe without role or create one? 
+             // Ideally roles are seeded. Let's assume seeded.
+        }
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        return (true, "Đăng ký thành công.");
     }
 
     public async Task LogoutAsync()

@@ -38,9 +38,6 @@ public class CustomerApiController : ControllerBase
         if (string.IsNullOrEmpty(query))
             return Ok(ApiResponse<List<object>>.Ok(new List<object>()));
 
-        // Logic filter tương tự CustomerController
-        // Nhưng ở POS ta chỉ cần tìm khách hàng có thể bán được (thuộc store hiện tại hoặc global)
-        
         var currentStoreId = HttpContext.Session.GetInt32("CurrentStoreId");
         
         // TODO: Cần check permission nếu cần

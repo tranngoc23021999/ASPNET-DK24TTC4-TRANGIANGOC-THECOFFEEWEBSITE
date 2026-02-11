@@ -121,7 +121,6 @@ public class WarehouseController : BaseController
         _context.WarehouseReceipts.Add(receipt);
         await _context.SaveChangesAsync();
 
-        // Thêm chi tiết và cập nhật tồn kho
         foreach (var item in items)
         {
             var detail = new WarehouseReceiptDetail
@@ -134,7 +133,6 @@ public class WarehouseController : BaseController
             };
             _context.WarehouseReceiptDetails.Add(detail);
 
-            // Cập nhật tồn kho (ProductStore)
             var productStore = await _context.ProductStores
                 .FirstOrDefaultAsync(ps => ps.ProductId == item.ProductId && ps.StoreId == storeId);
 
@@ -196,7 +194,6 @@ public class WarehouseController : BaseController
             }
         }
 
-        // Hoàn lại tồn kho
         foreach (var detail in receipt.Details)
         {
             var productStore = await _context.ProductStores
@@ -217,7 +214,6 @@ public class WarehouseController : BaseController
         return RedirectToAction(nameof(Index));
     }
 
-    // API lấy products theo store
     [HttpGet]
     public async Task<IActionResult> GetProducts(int storeId)
     {
@@ -247,7 +243,6 @@ public class WarehouseController : BaseController
         return Json(products);
     }
 
-    // API lấy suppliers theo store
     [HttpGet]
     public async Task<IActionResult> GetSuppliers(int storeId)
     {

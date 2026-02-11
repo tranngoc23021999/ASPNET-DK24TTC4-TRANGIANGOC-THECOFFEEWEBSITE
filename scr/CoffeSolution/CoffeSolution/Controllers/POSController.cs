@@ -46,7 +46,6 @@ public class POSController : Controller
         var user = await _context.Users.FindAsync(userId);
         ViewBag.EmployeeName = user?.FullName ?? "Unknown";
 
-        // Check Shift
         var currentShift = await _shiftService.GetOpenShiftAsync(userId.Value);
         ViewBag.HasOpenShift = currentShift != null;
         ViewBag.ShiftId = currentShift?.Id;
@@ -69,7 +68,6 @@ public class POSController : Controller
         try
         {
             var shift = await _shiftService.StartShiftAsync(userId.Value, request.StoreId, request.StartingCash, request.Note);
-            // Return back the saved data to confirm
             return Json(new { 
                 success = true, 
                 shiftId = shift.Id, 
@@ -91,7 +89,6 @@ public class POSController : Controller
         try
         {
             var shift = await _shiftService.EndShiftAsync(request.ShiftId, request.EndingCash);
-             // Return back the saved data to confirm
             return Json(new { 
                 success = true, 
                 savedEndingCash = shift.EndingCash 

@@ -30,7 +30,6 @@ public class ReportController : BaseController
         var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
         var allowedStoreIds = isAdmin ? null : await GetAllowedStoreIdsAsync(_context);
 
-        // Dashboard data
         var today = DateTime.Today;
         var startOfMonth = new DateTime(today.Year, today.Month, 1);
 
@@ -46,7 +45,6 @@ public class ReportController : BaseController
             ordersQuery = ordersQuery.Where(o => o.StoreId == storeId);
         }
 
-        // Tổng quan hôm nay
         ViewBag.TodayOrders = await ordersQuery
             .Where(o => o.CreatedAt >= today && o.Status == "Completed")
             .CountAsync();
@@ -55,7 +53,6 @@ public class ReportController : BaseController
             .Where(o => o.CreatedAt >= today && o.Status == "Completed")
             .SumAsync(o => o.TotalAmount);
 
-        // Tổng quan tháng này
         ViewBag.MonthOrders = await ordersQuery
             .Where(o => o.CreatedAt >= startOfMonth && o.Status == "Completed")
             .CountAsync();
@@ -64,7 +61,6 @@ public class ReportController : BaseController
             .Where(o => o.CreatedAt >= startOfMonth && o.Status == "Completed")
             .SumAsync(o => o.TotalAmount);
 
-        // Số liệu khác
         var storesQuery = _context.Stores.AsQueryable();
         var productsQuery = _context.Products.AsQueryable();
 
@@ -76,10 +72,8 @@ public class ReportController : BaseController
 
         if (storeId.HasValue)
         {
-            // For stores query, if a specific store is selected, we filter by that ID
             storesQuery = storesQuery.Where(s => s.Id == storeId);
             
-            // For products, filter by the specific store
             productsQuery = productsQuery.Where(p => p.StoreId == storeId);
         }
 
@@ -116,7 +110,6 @@ public class ReportController : BaseController
         if (storeId.HasValue)
             query = query.Where(o => o.StoreId == storeId);
 
-        // Doanh thu theo ngày
         var dailySales = await query
             .GroupBy(o => o.CreatedAt.Date)
             .Select(g => new
@@ -128,7 +121,6 @@ public class ReportController : BaseController
             .OrderBy(x => x.Date)
             .ToListAsync();
 
-        // Doanh thu theo cửa hàng
         var storeSales = await query
             .GroupBy(o => o.Store.Name)
             .Select(g => new
@@ -175,7 +167,6 @@ public class ReportController : BaseController
 
         var products = await query.ToListAsync();
 
-        // Update StockQuantity from ProductStore
         foreach (var p in products)
         {
             if (storeId.HasValue)

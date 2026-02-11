@@ -36,12 +36,6 @@ public class CustomerController : BaseController
         var isAdmin = await PermissionService.IsAdministratorAsync(CurrentUserId!.Value);
         if (!isAdmin)
         {
-             // Logic filter:
-             // 1. StoreId in AllowedStores
-             // 2. UserId == CurrentUser (My created global customers)
-             // 3. UserId in [Owners of AllowedStores] (Owner created global customers)
-             // 4. StoreId == null && UserId == null (System Global - if any)
-
              var allowedStoreIds = await GetAllowedStoreIdsAsync();
              
              var ownerIds = await _context.Stores
@@ -102,10 +96,6 @@ public class CustomerController : BaseController
             new { Id = -1, Name = "Toàn hệ thống" }
         };
 
-        // Chỉ hiện "Toàn bộ cửa hàng của tôi" nếu user có cửa hàng
-        // Lưu ý: Logic này có thể cần điều chỉnh tùy requirement, 
-        // ở đây tạm thời hiện luôn hoặc check qua UserStores nếu cần thiết.
-        // Để đơn giản ta cứ hiện, logic xử lý ở POST sẽ check CurrentUser.
         options.Add(new { Id = -2, Name = "Toàn bộ cửa hàng của tôi" });
         
         options.AddRange(stores.Select(s => new { Id = s.Id, Name = s.Name }));
@@ -145,7 +135,6 @@ public class CustomerController : BaseController
             return View("CreateEdit", model);
         }
 
-        // Xử lý Scope
         if (model.StoreId == -1) // Toàn hệ thống
         {
             model.StoreId = null;
@@ -174,7 +163,6 @@ public class CustomerController : BaseController
 
         ViewBag.Stores = await GetStoreOptionsAsync();
 
-        // Map ngược lại StoreId để hiển thị đúng trên Dropdown
         if (customer.StoreId == null)
         {
             if (customer.UserId == null) 
@@ -223,7 +211,6 @@ public class CustomerController : BaseController
         customer.Address = model.Address;
         customer.Note = model.Note;
         
-        // Xử lý Scope
         if (model.StoreId == -1) // Toàn hệ thống
         {
             customer.StoreId = null;

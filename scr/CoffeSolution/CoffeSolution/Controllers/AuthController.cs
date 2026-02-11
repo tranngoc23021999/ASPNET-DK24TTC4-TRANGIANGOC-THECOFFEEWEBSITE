@@ -44,8 +44,46 @@ public class AuthController : Controller
             return View(model);
         }
 
-        // Redirect đến Store Selection (sẽ tự động xử lý logic)
         return RedirectToAction("Select", "StoreSelect", new { returnUrl = model.ReturnUrl });
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult Register()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+        return View();
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var (success, message) = await _authService.RegisterAsync(model);
+
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, message);
+            return View(model);
+        }
+
+        // Auto login after registration
+        var (loginSuccess, loginMessage, user) = await _authService.LoginAsync(model.Username, model.Password);
+        if (loginSuccess)
+        {
+             return RedirectToAction("Select", "StoreSelect");
+        }
+
+        return RedirectToAction("Login");
     }
 
 

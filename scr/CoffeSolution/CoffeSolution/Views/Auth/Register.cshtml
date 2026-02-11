@@ -1,0 +1,101 @@
+@model CoffeSolution.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = "~/Views/Shared/_LayoutAuth.cshtml";
+}
+
+<div class="auth-card">
+    <div class="auth-header">
+        <div class="auth-brand">
+            <i class="bi bi-cup-hot-fill"></i>
+            <span>CoffeSolution</span>
+        </div>
+        <h1 class="auth-title">Đăng ký tài khoản</h1>
+        <p class="auth-subtitle">Bắt đầu quản lý quán cà phê của bạn ngay hôm nay!</p>
+    </div>
+
+    <form asp-action="Register" method="post" class="auth-form">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="auth-alert auth-alert-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <div>
+                    @Html.ValidationSummary(true, "", new { @class = "mb-0" })
+                </div>
+            </div>
+        }
+
+        <div class="form-group">
+            <label asp-for="FullName" class="form-label"></label>
+            <div class="input-group">
+                <i class="bi bi-person-badge-fill input-group-icon"></i>
+                <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên" autofocus />
+            </div>
+            <span asp-validation-for="FullName" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Username" class="form-label"></label>
+            <div class="input-group">
+                <i class="bi bi-person-fill input-group-icon"></i>
+                <input asp-for="Username" class="form-control" placeholder="Nhập tên đăng nhập" />
+            </div>
+            <span asp-validation-for="Username" class="text-danger small"></span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label"></label>
+                    <div class="input-group">
+                        <i class="bi bi-envelope-fill input-group-icon"></i>
+                        <input asp-for="Email" class="form-control" placeholder="Email" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Phone" class="form-label"></label>
+                    <div class="input-group">
+                        <i class="bi bi-telephone-fill input-group-icon"></i>
+                        <input asp-for="Phone" class="form-control" placeholder="Số điện thoại" />
+                    </div>
+                    <span asp-validation-for="Phone" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password" class="form-label"></label>
+            <div class="input-group">
+                <i class="bi bi-lock-fill input-group-icon"></i>
+                <input asp-for="Password" class="form-control" placeholder="Mật khẩu" />
+            </div>
+            <span asp-validation-for="Password" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="ConfirmPassword" class="form-label"></label>
+            <div class="input-group">
+                <i class="bi bi-lock-fill input-group-icon"></i>
+                <input asp-for="ConfirmPassword" class="form-control" placeholder="Xác nhận mật khẩu" />
+            </div>
+            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+        </div>
+
+        <button type="submit" class="btn btn-auth mt-3">
+            <i class="bi bi-person-plus-fill"></i>
+            Đăng ký
+        </button>
+
+        <div class="auth-links text-center mt-3">
+            <span class="text-muted">Đã có tài khoản?</span>
+            <a asp-action="Login" class="auth-link">Đăng nhập ngay</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
