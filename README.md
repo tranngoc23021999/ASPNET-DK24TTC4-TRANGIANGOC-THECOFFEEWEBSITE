@@ -86,6 +86,11 @@ Project đã có sẵn thư mục `Migrations/` nên **không cần** tạo migr
 ```powershell
 Update-Database -Context ApplicationDbContext
 ```
+Hoặc có thể dùng CMD với:
+```powershell
+dotnet ef database update
+```
+
 > [!TIP]
 > Tạo migration mới (ví dụ sau khi sửa model), dùng:
 > ```powershell
