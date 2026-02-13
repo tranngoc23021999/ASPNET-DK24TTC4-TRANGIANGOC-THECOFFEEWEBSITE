@@ -107,10 +107,11 @@ dotnet run
 
 > [!NOTE]
 >  **Tài khoản admin mặc định:**
-> | Trường   | Giá trị                |
-> | -------- | ---------------------- |
-> | Username | `admin`                |
-> | Password | `Admin@123`            |
-> | Email    | `admin@coffeeshop.com` |
+> | Trường   | Giá trị                      |
+> | -------- | ---------------------------- |
+> | Username | `trangiangoc`                |
+> | Password | `trangiangoc@123`            |
+> | Email    | `TranGiaNgoc@coffeeshop.com` |
 
-Mở URL `https://localhost:7207`
+
+Mở URL `https://localhost:7207` (Lưu ý link debug bằng https)

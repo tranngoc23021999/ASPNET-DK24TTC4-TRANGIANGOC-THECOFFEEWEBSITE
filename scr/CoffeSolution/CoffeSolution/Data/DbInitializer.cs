@@ -268,21 +268,21 @@ public static class DbInitializer
             .Select(r => r.Id)
             .FirstAsync();
 
-        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Username == "admin");
+        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Username == "trangiangoc");
         if (adminUser == null)
         {
             adminUser = new User
             {
-                Username = "admin",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
-                FullName = "Administrator",
-                Email = "admin@coffeeshop.com",
+                Username = "trangiangoc",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("trangiangoc@123"),
+                FullName = "Trần Gia Ngọc",
+                Email = "TranGiaNgoc@coffeeshop.com",
                 IsActive = true,
                 CreatedAt = DateTime.Now
             };
             context.Users.Add(adminUser);
             await context.SaveChangesAsync();
-            logger.LogInformation("Seeded admin user: admin/Admin@123");
+            logger.LogInformation("Seeded admin user: trangiangoc/trangiangoc@123");
         }
 
         // Ensure Admin has Administrator role
@@ -300,6 +300,6 @@ public static class DbInitializer
             logger.LogInformation("Assigned Administrator role to admin user.");
         }
 
-        logger.LogInformation("Seeded admin user: admin/Admin@123");
+        logger.LogInformation("Seeded admin user: trangiangoc/trangiangoc@123");
     }
 }
