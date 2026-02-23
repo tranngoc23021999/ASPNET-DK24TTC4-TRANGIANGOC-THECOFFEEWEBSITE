@@ -31,13 +31,13 @@
 | Hệ điều hành           | **>= 10**                                                                     |
 | **.NET SDK**           | **9.0** (bắt buộc — project target `net9.0`)                                  |
 | **SQL Server**         | LocalDB / SQL Express / SQL Server 2019 trở lên                               |
-| **SSMS** _(tuỳ chọn)_  | SQL Server Management Studio — dùng quản trị CSDL                             |
+| **SSMS**               | SQL Server Management Studio — dùng quản trị CSDL                             |
 | **Visual Studio 2022** |                                                                               |
 
 ### 2. Lấy mã nguồn
 
 ```bash
-git clone <URL_REPOSITORY>
+git clone https://github.com/tranngoc23021999/ASPNET-DK24TTC4-TRANGIANGOC-THECOFFEEWEBSITE.git
 ```
 **Mở bằng Visual Studio:**
 
