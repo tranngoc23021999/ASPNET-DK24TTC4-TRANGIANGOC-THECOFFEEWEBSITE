@@ -105,6 +105,12 @@ dotnet build
 dotnet run
 ```
 
+Hoặc
+```bash
+cd CoffeSolution/CoffeSolution
+dotnet watch
+```
+
 > [!NOTE]
 >  **Tài khoản admin mặc định:**
 > | Trường   | Giá trị                      |
